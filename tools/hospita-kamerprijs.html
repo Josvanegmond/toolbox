@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hospita Kamerprijs Rekentool</title>
+<style>
+  :root{
+    --ground:#ffffff;
+    --surface:#ffffff;
+    --surface-2:#f4f6f6;
+    --ink:#0a0d0e;
+    --muted:#5a6366;
+    --line:#dde2e3;
+    --accent:#0a8f99;
+    --accent-ink:#ffffff;
+    --accent-soft:#dff3f4;
+    --warn:#b5490f;
+    --warn-soft:#faeadf;
+    --good:#177a4a;
+    --shadow: 0 1px 2px rgba(10,13,14,0.04), 0 8px 24px -12px rgba(10,13,14,0.16);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#000000;
+      --surface:#141819;
+      --surface-2:#0e1112;
+      --ink:#f3f6f6;
+      --muted:#93a0a2;
+      --line:#282f30;
+      --accent:#2fd8e0;
+      --accent-ink:#00191b;
+      --accent-soft:rgba(47,216,224,0.14);
+      --warn:#ff9a5c;
+      --warn-soft:rgba(255,154,92,0.14);
+      --good:#5fd88e;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#000000;
+    --surface:#141819;
+    --surface-2:#0e1112;
+    --ink:#f3f6f6;
+    --muted:#93a0a2;
+    --line:#282f30;
+    --accent:#2fd8e0;
+    --accent-ink:#00191b;
+    --accent-soft:rgba(47,216,224,0.14);
+    --warn:#ff9a5c;
+    --warn-soft:rgba(255,154,92,0.14);
+    --good:#5fd88e;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height:1.45;
+  }
+  h1,h2,h3{
+    font-family: "Iowan Old Style","Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    font-weight:600;
+    text-wrap:balance;
+    margin:0;
+  }
+  .mono{
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+  a{color:var(--accent);}
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+  }
+  .stickybar{
+    position:sticky;
+    top:0;
+    z-index:60;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+    box-shadow:var(--shadow);
+  }
+  .stickybar-inner{
+    max-width:1180px;
+    margin:0 auto;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .stickybar-result{ display:flex; align-items:baseline; gap:10px; white-space:nowrap; }
+  .stickybar-result .amt{ font-size:19px; font-weight:700; color:var(--accent); }
+  .stickybar-result .ptslabel{ font-size:12.5px; color:var(--muted); font-weight:600; }
+  .stickybar-result .ptslabel b{ color:var(--ink); font-size:14px; }
+  .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  header.top{
+    padding-bottom:22px;
+    margin-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  header.top .titleblock{ display:flex; flex-direction:column; gap:6px; max-width:66ch; }
+  header.top .eyebrow{
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  header.top h1{ font-size:30px; }
+  header.top p{ margin:4px 0 0; color:var(--muted); font-size:15px;}
+  header.top .lastupdated{ font-size:12px; color:var(--muted); }
+  header.top .lastupdated b{ color:var(--ink); }
+  .langtoggle{
+    display:inline-flex;
+    border:1px solid var(--line);
+    border-radius:999px;
+    overflow:hidden;
+    background:var(--surface);
+  }
+  .langtoggle button{
+    font:inherit; font-size:12.5px; font-weight:700; letter-spacing:0.02em;
+    border:none; background:transparent; color:var(--muted);
+    padding:7px 14px; cursor:pointer;
+  }
+  .langtoggle button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .helpbtn{
+    font:inherit; font-size:12.5px; font-weight:700;
+    border:1px solid var(--line); border-radius:999px;
+    background:var(--surface); color:var(--ink);
+    padding:7px 14px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .helpbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .themebtn{
+    font:inherit; font-size:15px; line-height:1;
+    border:1px solid var(--line); border-radius:999px;
+    background:var(--surface); color:var(--ink);
+    width:32px; height:32px; padding:0; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .themebtn:hover{ border-color:var(--accent); color:var(--accent); }
+
+  .h2title{ display:inline-flex; align-items:center; gap:7px; }
+  .infobtn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:17px; height:17px; border-radius:50%; flex:none;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--muted);
+    font-size:11px; font-weight:700; font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    cursor:pointer; padding:0; line-height:1;
+  }
+  .infobtn:hover, .infobtn[aria-expanded="true"]{ border-color:var(--accent); color:var(--accent); }
+  #tipPopover{
+    position:fixed; z-index:80; max-width:min(300px, calc(100vw - 32px));
+    background:var(--surface); border:1px solid var(--line); border-radius:10px;
+    box-shadow:var(--shadow); padding:10px 13px; font-size:12.5px; color:var(--ink);
+    line-height:1.45;
+  }
+  #tipPopover[hidden]{ display:none; }
+
+  .disclaimer{
+    display:flex; gap:12px; align-items:flex-start;
+    background:var(--warn-soft);
+    border:1px solid var(--warn);
+    border-radius:12px;
+    padding:14px 16px;
+    margin-bottom:20px;
+    font-size:13.5px;
+  }
+  .disclaimer .mark{
+    font-weight:800; color:var(--warn); font-size:15px; line-height:1;
+    flex:none;
+  }
+  .disclaimer b{ color:var(--warn); }
+  .disclaimer a{ color:var(--warn); text-decoration:underline; }
+
+  .layout{
+    display:grid;
+    grid-template-columns: minmax(0,1fr) 340px;
+    gap:24px;
+    align-items:start;
+  }
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: 1fr; }
+    .summary{ position:static !important; order:-1; }
+  }
+
+  .summary{
+    position:sticky;
+    top:20px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:20px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .summary .label{
+    font-size:11px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .summary .rent{
+    font-size:40px;
+    font-weight:700;
+    color:var(--accent);
+    line-height:1.1;
+  }
+  .summary .rent small{
+    font-size:14px;
+    font-weight:500;
+    color:var(--muted);
+    display:block;
+    margin-top:2px;
+  }
+  .summary .points{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    font-size:15px;
+    color:var(--ink);
+    padding-top:6px;
+    border-top:1px solid var(--line);
+  }
+  .summary .points b{ font-size:20px; }
+  .breakdown{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    font-size:12.5px;
+  }
+  .breakdown div{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    color:var(--muted);
+    padding:2px 0;
+  }
+  .breakdown div span:last-child{ color:var(--ink); }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:22px 22px 20px;
+    margin-bottom:16px;
+  }
+  .card > h2{
+    font-size:18px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .card > h2 .pts{
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size:13px;
+    font-weight:600;
+    color:var(--accent);
+    white-space:nowrap;
+  }
+  .card > .sub{
+    color:var(--muted);
+    font-size:13px;
+    margin:4px 0 16px;
+    max-width:70ch;
+  }
+  .grid2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:14px 18px;
+  }
+  .grid3{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:12px 16px;
+  }
+  @media (max-width:560px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+
+  label.field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    font-size:13px;
+    color:var(--ink);
+  }
+  label.field .hint{ font-size:11.5px; color:var(--muted); font-weight:400; }
+  input[type="number"], select{
+    font:inherit;
+    font-size:14px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--surface-2);
+    color:var(--ink);
+  }
+  input[type="number"]:focus, select:focus, input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  input[type="number"]{ width:100%; }
+  .check{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:13.5px;
+    padding:6px 0;
+    cursor:pointer;
+  }
+  .check input{ margin-top:3px; accent-color: var(--accent); }
+  .checklist{ display:flex; flex-direction:column; }
+
+  fieldset{ border:none; margin:0; padding:0; }
+  legend{ padding:0; font-size:13px; font-weight:600; margin-bottom:4px; }
+
+  .note{
+    background:var(--accent-soft);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:13px;
+    color:var(--ink);
+    margin-top:14px;
+  }
+  .note.warn{ background:var(--warn-soft); }
+  .note b{ color:var(--accent); }
+  .note.warn b{ color:var(--warn); }
+
+  details{ margin-top:2px; }
+  details > summary{
+    cursor:pointer;
+    font-size:13px;
+    font-weight:600;
+    color:var(--accent);
+    padding:6px 0;
+    list-style:none;
+  }
+  details > summary::-webkit-details-marker{ display:none; }
+  details > summary::before{ content:"▸ "; }
+  details[open] > summary::before{ content:"▾ "; }
+  details > .grid2, details > .grid3, details > .checklist{ margin-top:10px; }
+
+  .divider{ height:1px; background:var(--line); margin:16px 0; border:none; }
+
+  footer.legal{
+    margin-top:30px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-size:12px;
+    color:var(--muted);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  footer.legal a{ color:var(--muted); text-decoration:underline; }
+
+  .lawcard{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+    margin-bottom:16px;
+    font-size:13.5px;
+  }
+  .lawcard h2{ font-size:17px; margin-bottom:10px; }
+  .lawcard dl{ display:grid; grid-template-columns: max-content 1fr; gap:6px 16px; margin:0; }
+  .lawcard dt{ color:var(--muted); font-weight:600; }
+  .lawcard dd{ margin:0; }
+
+  dialog#sourcesModal{
+    max-width: 620px;
+    width: calc(100% - 40px);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:0;
+    background:var(--surface);
+    color:var(--ink);
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.4);
+  }
+  dialog#sourcesModal::backdrop{ background:rgba(10,14,10,0.55); }
+  .modal-inner{ padding:24px 26px 22px; max-height:80vh; overflow-y:auto; }
+  .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
+  .modal-head h2{ font-size:20px; }
+  .modal-close{
+    font:inherit; font-size:13px; font-weight:700;
+    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    border-radius:8px; padding:5px 10px; cursor:pointer; flex:none;
+  }
+  .modal-close:hover{ border-color:var(--accent); color:var(--accent); }
+  .srclist{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
+  .srclist li{ font-size:13.5px; padding-bottom:12px; border-bottom:1px solid var(--line); }
+  .srclist li:last-child{ border-bottom:none; padding-bottom:0; }
+  .srclist .srctitle{ font-weight:700; display:block; margin-bottom:2px; }
+  .srclist .srcnote{ color:var(--muted); font-size:12.5px; }
+  .modal-section-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:18px 0 4px; }
+</style>
+</head>
+<body>
+<div class="stickybar">
+  <div class="stickybar-inner">
+    <div class="stickybar-result">
+      <span class="mono amt" id="stickyRent">€ 0,00</span>
+      <span class="ptslabel"><b id="stickyPoints">0</b> <span data-i18n="sticky_points_label">punten</span></span>
+    </div>
+    <div class="toolbar">
+      <div class="langtoggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="nl" aria-pressed="true">NL</button>
+        <button type="button" data-lang-btn="en" aria-pressed="false">EN</button>
+      </div>
+      <button type="button" class="helpbtn" id="openSources" data-i18n="helpbtn">Bronnen &amp; hulp</button>
+      <button type="button" class="themebtn" id="themeToggle" aria-label="Toggle light/dark theme">&#9788;</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <span class="eyebrow" data-i18n="eyebrow">Woningwaarderingsstelsel onzelfstandige woonruimte (WWSO)</span>
+      <h1 data-i18n="h1">Wat mag u vragen voor uw kamer?</h1>
+      <p data-i18n="intro">Bereken de wettelijke maximale kale huur voor een kamer in uw huis, met dezelfde puntentelling als de Huurcommissie.</p>
+      <p class="lastupdated" data-i18n-html="lastupdated">Laatst gecontroleerd tegen de officiële bronnen: <b>30 augustus 2026</b>. Wetgeving kan sindsdien gewijzigd zijn.</p>
+    </div>
+  </header>
+
+  <div class="disclaimer">
+    <span class="mark">&#9888;</span>
+    <div data-i18n-html="disclaimer">
+      Gemaakt met behulp van <b>Claude Sonnet 5</b>. <a href="#" id="disclaimerSourcesLink">Lees meer</a>.
+    </div>
+  </div>
+
+  <div class="layout">
+    <main>
+
+      <div class="lawcard">
+        <h2 data-i18n="sector_h2">Eerst dit: kamers zitten altijd in de sociale sector</h2>
+        <p style="margin-top:0" data-i18n="sector_p1">Een kamer met gedeelde voorzieningen valt altijd in de sociale sector, ongeacht het puntenaantal: de huurder kan de huur altijd laten toetsen door de Huurcommissie.</p>
+        <p data-i18n="sector_p2">Dit is anders dan bij hele zelfstandige woningen, die boven 186 punten vrije-sectorhuur mogen vragen.</p>
+        <p style="margin-bottom:0" data-i18n-html="sector_link"><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/hoofdstuk-1---basisinformatie-woningwaardering-van-een-onzelfstandige-woonruimte#dcfbb56488" target="_blank" rel="noopener">Lees meer (Huurcommissie, §1.2) →</a></p>
+      </div>
+
+      <!-- RUBRIEK 1/2 – eigen kamer -->
+      <section class="card" data-card="privé">
+        <h2><span class="h2title"><span data-i18n="room_h2">Uw kamer</span><button type="button" class="infobtn" data-tip="room_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="privé">0 pt</span></h2>
+        <div class="grid2">
+          <label class="field"><span data-i18n="room_area_label">Oppervlakte van de kamer (m²)</span>
+            <span class="hint" data-i18n="room_area_hint">Binnenmaats, muur tot muur, op 1,50 m hoogte gemeten</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="privVertrekM2">
+          </label>
+          <label class="field"><span data-i18n="room_extra_label">Eigen overige ruimte (m²)</span>
+            <span class="hint" data-i18n="room_extra_hint">Bijv. eigen berging/kastruimte die geen vertrek is</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="privOverigeM2">
+          </label>
+        </div>
+        <div class="grid3" style="margin-top:14px">
+          <label class="field"><span data-i18n="room_heated_label">Verwarmde privévertrekken</span>
+            <span class="hint" data-i18n="room_heated_hint">2 pt per vertrek, vaste verwarming</span>
+            <input type="number" min="0" step="1" value="1" data-k="privVerwarmdVertrek">
+          </label>
+          <label class="field"><span data-i18n="room_heated_extra_label">Verwarmde overige/verkeersruimte</span>
+            <span class="hint" data-i18n="room_heated_extra_hint">1 pt elk, max. 4 pt</span>
+            <input type="number" min="0" step="1" placeholder="0" data-k="privVerwarmdOverige">
+          </label>
+          <label class="field"><span data-i18n="room_cooled_label">Vertrekken met vaste koeling én verwarming</span>
+            <span class="hint" data-i18n="room_cooled_hint">1 pt elk, max. 2 pt</span>
+            <input type="number" min="0" step="1" placeholder="0" data-k="privVerkoeld">
+          </label>
+        </div>
+        <div class="note warn" data-i18n-html="room_note8m2">
+          <b>Kamer &lt; 8 m²?</b> &minus;4 punten automatisch verwerkt (zie Aftrekpunten).
+        </div>
+      </section>
+
+      <!-- Gedeelde ruimtes -->
+      <section class="card" data-card="gedeeld">
+        <h2><span class="h2title"><span data-i18n="shared_h2">Gedeelde ruimtes</span><button type="button" class="infobtn" data-tip="shared_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="gedeeld">0 pt</span></h2>
+        <label class="field" style="max-width:420px"><span data-i18n="shared_n_label">Aantal (andere) verhuurde kamers dat dit ook deelt</span>
+          <span class="hint" data-i18n="shared_n_hint">Tel deze kamer zelf mee. Bij één hospitakamer meestal 1. Uw eigen woongedeelte telt niet mee.</span>
+          <input type="number" min="1" step="1" value="1" data-k="deelN">
+        </label>
+
+        <hr class="divider">
+        <div class="grid2">
+          <label class="field"><span data-i18n="shared_living_label">Gedeelde woonkamer (m²)</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="woonkamerM2">
+          </label>
+          <label class="check" style="align-self:end">
+            <input type="checkbox" data-k="woonkamerVerwarmd" checked> <span data-i18n="shared_living_heated">Woonkamer is verwarmd</span>
+          </label>
+          <label class="field"><span data-i18n="shared_kitchen_label">Gedeelde keuken, als apart vertrek (m²)</span>
+            <span class="hint" data-i18n="shared_kitchen_hint">Los van de aanrechtpunten hieronder bij "Keuken"</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="keukenM2">
+          </label>
+          <label class="check" style="align-self:end">
+            <input type="checkbox" data-k="keukenVerwarmd" checked> <span data-i18n="shared_kitchen_heated">Keuken is verwarmd</span>
+          </label>
+          <label class="field"><span data-i18n="shared_bath_label">Gedeelde badkamer/toilet, als vertrek (m²)</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="badkamerM2">
+          </label>
+          <label class="check" style="align-self:end">
+            <input type="checkbox" data-k="badkamerVerwarmd"> <span data-i18n="shared_bath_heated">Badkamer is verwarmd</span>
+          </label>
+          <label class="field"><span data-i18n="shared_other_label">Gedeelde overige ruimte (m²)</span>
+            <span class="hint" data-i18n="shared_other_hint">Bijv. hal, gedeelde berging, fietsenstalling</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="gedeeldOverigeM2">
+          </label>
+          <label class="check" style="align-self:end">
+            <input type="checkbox" data-k="gedeeldOverigeVerwarmd"> <span data-i18n="shared_other_heated">Overige ruimte is verwarmd</span>
+          </label>
+        </div>
+        <label class="field" style="max-width:420px; margin-top:14px"><span data-i18n="shared_cooled_label">Gedeelde vertrekken met vaste koeling én verwarming</span>
+          <span class="hint" data-i18n="shared_cooled_hint">1 pt elk, max. 2 pt in totaal, wordt ook gedeeld</span>
+          <input type="number" min="0" step="1" placeholder="0" data-k="gedeeldVerkoeld">
+        </label>
+      </section>
+
+      <!-- Energieprestatie -->
+      <section class="card" data-card="energie">
+        <h2><span class="h2title"><span data-i18n="energy_h2">Energieprestatie</span><button type="button" class="infobtn" data-tip="energy_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="energie">0 pt</span></h2>
+        <div class="grid2">
+          <label class="field"><span data-i18n="energy_method_label">Methode</span>
+            <select data-k="energieMethode">
+              <option value="label" data-i18n="energy_method_label_opt">Energielabel (NTA 8800)</option>
+              <option value="bouwjaar" data-i18n="energy_method_year_opt">Geen geldig label &rarr; bouwjaar</option>
+            </select>
+          </label>
+          <label class="field" data-group="energieLabelGroup"><span data-i18n="energy_label_label">Energielabel</span>
+            <select data-k="energieLabel">
+              <option value="A++++">A++++ (1,00 pt/m²)</option>
+              <option value="A+++">A+++ (0,95 pt/m²)</option>
+              <option value="A++">A++ (0,85 pt/m²)</option>
+              <option value="A+">A+ (0,75 pt/m²)</option>
+              <option value="A" selected>A (0,65 pt/m²)</option>
+              <option value="B">B (0,50 pt/m²)</option>
+              <option value="C">C (0,35 pt/m²)</option>
+              <option value="D">D (0,20 pt/m²)</option>
+              <option value="E">E (&minus;0,05 pt/m²)</option>
+              <option value="F">F (&minus;0,10 pt/m²)</option>
+              <option value="G">G (&minus;0,15 pt/m²)</option>
+            </select>
+          </label>
+          <label class="field" data-group="energieBouwjaarGroup" style="display:none"><span data-i18n="energy_year_label">Bouwjaar</span>
+            <select data-k="energieBouwjaar">
+              <option value="0.65" data-i18n="year_2002">2002 of later (0,65 pt/m²)</option>
+              <option value="0.50" data-i18n="year_2000">2000&ndash;2001 (0,50 pt/m²)</option>
+              <option value="0.35" data-i18n="year_1992">1992&ndash;1999 (0,35 pt/m²)</option>
+              <option value="0.20" data-i18n="year_1984">1984&ndash;1991 (0,20 pt/m²)</option>
+              <option value="-0.05" data-i18n="year_1979">1979&ndash;1983 (&minus;0,05 pt/m²)</option>
+              <option value="-0.10" data-i18n="year_1977">1977&ndash;1978 (&minus;0,10 pt/m²)</option>
+              <option value="-0.15" data-i18n="year_1976">1976 of ouder (&minus;0,15 pt/m²)</option>
+            </select>
+          </label>
+        </div>
+        <div class="note" style="margin-top:14px" data-i18n-html="energy_note">
+          Label opzoeken (10 jaar geldig): <a href="https://www.ep-online.nl" target="_blank" rel="noopener">ep-online.nl</a>
+        </div>
+      </section>
+
+      <!-- Keuken -->
+      <section class="card" data-card="keuken">
+        <h2><span class="h2title"><span data-i18n="kitchen_h2">Keuken</span><button type="button" class="infobtn" data-tip="kitchen_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="keuken">0 pt</span></h2>
+        <label class="field" style="max-width:420px"><span data-i18n="kitchen_counter_label">Lengte van het aanrechtblad</span>
+          <select data-k="aanrecht">
+            <option value="0" data-i18n="counter_0">Geen keuken / korter dan 1 m (0 pt)</option>
+            <option value="4" data-i18n="counter_4">1&ndash;2 meter (4 pt)</option>
+            <option value="7" selected data-i18n="counter_7">2&ndash;3 meter (7 pt)</option>
+            <option value="10" data-i18n="counter_10">Langer dan 3 meter (10 pt)</option>
+            <option value="13" data-i18n="counter_13">Langer dan 5 meter, bij 8+ kamers (13 pt)</option>
+          </select>
+        </label>
+        <details open>
+          <summary><span class="h2title"><span data-i18n="kitchen_extra_summary">Extra voorzieningen in de keuken</span><button type="button" class="infobtn" data-tip="kitchen_extra_sub" aria-label="Meer info" aria-expanded="false">i</button></span></summary>
+          <div class="checklist">
+            <label class="check"><input type="checkbox" data-k="kx_afzuig"> <span data-i18n="kx_afzuig">Afzuiginstallatie (0,75 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_inductie"> <span data-i18n="kx_inductie">Inbouw kookplaat inductie (1,75 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_keramisch"> <span data-i18n="kx_keramisch">Inbouw kookplaat keramisch (1 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_gas"> <span data-i18n="kx_gas">Inbouw kookplaat gas (0,50 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_koelkast"> <span data-i18n="kx_koelkast">Inbouw koelkast (1 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_vrieskast"> <span data-i18n="kx_vrieskast">Inbouw vrieskast (0,75 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_ovenel"> <span data-i18n="kx_ovenel">Inbouw oven elektrisch (1 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_ovengas"> <span data-i18n="kx_ovengas">Inbouw oven gas (0,50 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_magnetron"> <span data-i18n="kx_magnetron">Inbouw magnetron (1 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_vaatwasser"> <span data-i18n="kx_vaatwasser">Inbouw vaatwasmachine (1,50 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_eenhandsmengkraan"> <span data-i18n="kx_eenhandsmengkraan">Eénhandsmengkraan (0,25 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_thermokraan"> <span data-i18n="kx_thermokraan">Thermostatische mengkraan (0,50 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="kx_kokendwater"> <span data-i18n="kx_kokendwater">Kokendwaterfunctie (0,50 pt)</span></label>
+            <label class="field" style="margin-top:6px"><span data-i18n="kx_extrakast_label">Extra kastruimte boven het minimum, per 60 cm (0,75 pt elk)</span>
+              <input type="number" min="0" step="1" placeholder="0" data-k="kx_extrakast">
+            </label>
+          </div>
+        </details>
+      </section>
+
+      <!-- Sanitair -->
+      <section class="card" data-card="sanitair">
+        <h2><span class="h2title"><span data-i18n="bath_h2">Sanitair</span><button type="button" class="infobtn" data-tip="bath_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="sanitair">0 pt</span></h2>
+        <div class="grid2">
+          <label class="field"><span data-i18n="bath_toilet_label">Toilet</span>
+            <select data-k="toilet">
+              <option value="0" data-i18n="toilet_none">Geen</option>
+              <option value="3" selected data-i18n="toilet_staand_apart">Staand, in aparte toiletruimte (3 pt)</option>
+              <option value="2" data-i18n="toilet_staand_bad">Staand, in de badkamer (2 pt)</option>
+              <option value="3.75" data-i18n="toilet_hangend_apart">Hangend, in aparte toiletruimte (3,75 pt)</option>
+              <option value="2.75" data-i18n="toilet_hangend_bad">Hangend, in de badkamer (2,75 pt)</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="bath_shower_label">Douche / bad</span>
+            <select data-k="doucheBad">
+              <option value="0" data-i18n="shower_none">Geen</option>
+              <option value="3" selected data-i18n="shower_douche">Douche (3 pt)</option>
+              <option value="5" data-i18n="shower_bad">Bad (5 pt)</option>
+              <option value="6" data-i18n="shower_combi">Bad/douche-combinatie (6 pt)</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="bath_sink_label">Wastafels in de badkamer</span>
+            <input type="number" min="0" step="1" value="1" data-k="wastafelCount">
+            <span class="hint" data-i18n="bath_sink_hint">1 pt per stuk</span>
+          </label>
+          <label class="field"><span data-i18n="bath_sinkmp_label">Meerpersoonswastafels in de badkamer</span>
+            <span class="hint" data-i18n="bath_sinkmp_hint">Min. 70 cm breed, 2 kranen &mdash; 1,50 pt per stuk</span>
+            <input type="number" min="0" step="1" placeholder="0" data-k="wastafelMPCount">
+          </label>
+        </div>
+        <details>
+          <summary><span class="h2title"><span data-i18n="bath_extra_summary">Extra sanitaire voorzieningen</span><button type="button" class="infobtn" data-tip="bath_extra_sub" aria-label="Meer info" aria-expanded="false">i</button></span></summary>
+          <div class="checklist">
+            <label class="check"><input type="checkbox" data-k="sx_bubbel"> <span data-i18n="sx_bubbel">Bubbelfunctie van het bad (1,50 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_afscheiding"> <span data-i18n="sx_afscheiding">Gemonteerde volledige doucheafscheiding (1,25 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_handdoekrad"> <span data-i18n="sx_handdoekrad">Handdoekradiator (0,75 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_kastje"> <span data-i18n="sx_kastje">Ingebouwd kastje met wastafel (1 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_kastruimte"> <span data-i18n="sx_kastruimte">Kastruimte, min. 40 cm breed/hoog (0,75 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_stopcontact"> <span data-i18n="sx_stopcontact">Stopcontact bij wastafel (0,25 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_eenhandsmengkraan"> <span data-i18n="sx_eenhandsmengkraan">Eénhandsmengkraan (0,25 pt)</span></label>
+            <label class="check"><input type="checkbox" data-k="sx_thermokraan"> <span data-i18n="sx_thermokraan">Thermostatische mengkraan (0,50 pt)</span></label>
+          </div>
+        </details>
+      </section>
+
+      <!-- Buitenruimte -->
+      <details class="card" data-card="buiten" style="cursor:default">
+        <summary style="font-size:18px; font-weight:600; font-family:inherit; color:var(--ink); display:flex; justify-content:space-between;">
+          <span class="h2title"><span data-i18n="outdoor_h2">Buitenruimte</span><button type="button" class="infobtn" data-tip="outdoor_sub" aria-label="Meer info" aria-expanded="false">i</button> <span class="pts mono" data-pts="buiten" style="margin-left:8px">0 pt</span></span>
+        </summary>
+        <div class="grid2">
+          <label class="field"><span data-i18n="outdoor_priv_label">Eigen buitenruimte (m²)</span>
+            <span class="hint" data-i18n="outdoor_priv_hint">Exclusief gebruiksrecht volgens het huurcontract &mdash; 2 pt + 0,35 pt/m²</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="priveBuitenM2">
+          </label>
+          <label class="field"><span data-i18n="outdoor_shared_label">Gedeelde buitenruimte (m²)</span>
+            <span class="hint" data-i18n="outdoor_shared_hint">Bijv. gezamenlijke tuin &mdash; 0,75 pt/m², gedeeld</span>
+            <input type="number" min="0" step="0.1" placeholder="0" data-k="gedeeldBuitenM2">
+          </label>
+        </div>
+      </details>
+
+      <!-- WOZ -->
+      <section class="card" data-card="woz">
+        <h2><span class="h2title"><span data-i18n="woz_h2">WOZ-waarde</span><button type="button" class="infobtn" data-tip="woz_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="woz">10 pt</span></h2>
+        <p class="sub" data-i18n-html="woz_short">Let op: van de <b>hele woning</b>, niet alleen de kamer.</p>
+        <div class="grid3">
+          <label class="field"><span data-i18n="woz_value_label">WOZ-waarde hele woning (€)</span>
+            <input type="number" min="0" step="1000" value="" data-i18n-placeholder="woz_value_ph" placeholder="bijv. 350000" data-k="wozWaarde">
+          </label>
+          <label class="field"><span data-i18n="woz_area_label">Gebruiksoppervlakte hele woning (m²)</span>
+            <input type="number" min="1" step="1" value="" data-i18n-placeholder="woz_area_ph" placeholder="bijv. 120" data-k="wozOppervlakte">
+          </label>
+          <label class="field"><span data-i18n="woz_region_label">Regio (COROP-gebied)</span>
+            <select data-k="wozRegio"></select>
+          </label>
+        </div>
+        <div class="note" id="wozUitleg" data-i18n="woz_note_default">Vul de WOZ-waarde, oppervlakte en regio in om de punten te berekenen. Zonder invoer rekent de tool met het minimum van 10 punten.</div>
+      </section>
+
+      <!-- Aftrekpunten -->
+      <section class="card" data-card="aftrek">
+        <h2><span class="h2title"><span data-i18n="deduct_h2">Aftrekpunten</span><button type="button" class="infobtn" data-tip="deduct_sub" aria-label="Meer info" aria-expanded="false">i</button></span> <span class="pts" data-pts="aftrek">0 pt</span></h2>
+        <div class="checklist">
+          <label class="check">
+            <input type="checkbox" data-k="af_klein8" disabled>
+            <span data-i18n="deduct_8m2">Totale oppervlakte privévertrek(ken) kleiner dan 8 m² <i>(automatisch bepaald uit "Uw kamer" hierboven)</i></span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-k="af_hospita">
+            <span data-i18n-html="deduct_hospita"><b>Hospita-situatie:</b> u (verhuurder) woont zelf in de woning, en de kamer of het sanitair waartoe de huurder toegang heeft is alleen bereikbaar via uw eigen woon- of slaapvertrek</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-k="af_glas">
+            <span data-i18n="deduct_glas">Raamoppervlak in het hoofdvertrek kleiner dan 0,75 m² zichtbaar glas</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" data-k="af_hoograam">
+            <span data-i18n="deduct_hoograam">Laagste raamkozijn van het hoofdvertrek meer dan 1,60 m boven de vloer</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bijzondere situaties -->
+      <details class="card" data-card="opslag" style="cursor:default">
+        <summary style="font-size:18px; font-weight:600; font-family:inherit; color:var(--ink); display:flex; justify-content:space-between;">
+          <span><span data-i18n="special_h2">Bijzondere situaties</span> <span class="pts mono" data-pts="opslag" style="margin-left:8px">&mdash;</span></span>
+        </summary>
+        <p class="sub" data-i18n="special_sub">Monumentenstatus, parkeerplek, laadpaal en video-deurbel: minder gangbaar, maar kan relevant zijn.</p>
+
+        <fieldset>
+          <legend class="h2title" style="justify-content:flex-start"><span data-i18n="mon_legend">Monument / beschermd gezicht (rubriek 14)</span><button type="button" class="infobtn" data-tip="mon_note" aria-label="Meer info" aria-expanded="false">i</button></legend>
+          <label class="check"><input type="checkbox" data-k="mon_rijk"> <span data-i18n="mon_rijk">Rijksmonument</span></label>
+          <div class="grid2" style="margin:0 0 8px 26px; display:none" data-group="rijkContractGroup">
+            <label class="field" style="font-size:12.5px">
+              <select data-k="mon_rijk_contract">
+                <option value="na" data-i18n="mon_rijk_na">Huurcontract op/na 1 juli 2024 &rarr; +35% op de max. huur</option>
+                <option value="voor" data-i18n="mon_rijk_voor">Huurcontract vóór 1 juli 2024 &rarr; +10 punten</option>
+              </select>
+            </label>
+          </div>
+          <label class="check"><input type="checkbox" data-k="mon_gemeente"> <span data-i18n="mon_gemeente">Gemeentelijk of provinciaal monument (+15% op de max. huur)</span></label>
+          <label class="check"><input type="checkbox" data-k="mon_dorpsgezicht"> <span data-i18n="mon_dorpsgezicht">Beschermd dorps- of stadsgezicht, gebouwd vóór 1965 (+5% op de max. huur)</span></label>
+        </fieldset>
+
+        <hr class="divider">
+        <fieldset>
+          <legend class="h2title" style="justify-content:flex-start"><span data-i18n="park_legend">Gedeelde parkeerplek (rubriek 10)</span><button type="button" class="infobtn" data-tip="park_note" aria-label="Meer info" aria-expanded="false">i</button></legend>
+          <div class="grid2">
+            <label class="field"><span data-i18n="park_type_label">Type parkeerplek</span>
+              <select data-k="parkeerType">
+                <option value="0" data-i18n="park_none">Geen</option>
+                <option value="9" data-i18n="park_garage">Afgesloten parkeergarage (9 pt)</option>
+                <option value="6" data-i18n="park_covered">Overdekt, bijv. carport (6 pt)</option>
+                <option value="4" data-i18n="park_open">Onoverdekt (4 pt)</option>
+              </select>
+            </label>
+            <label class="field"><span data-i18n="park_addr_label">Aantal adressen dat de plek deelt</span>
+              <input type="number" min="1" step="1" value="1" data-k="parkeerAdressen">
+            </label>
+          </div>
+          <label class="check"><input type="checkbox" data-k="laadpaal"> <span data-i18n="park_ev">Exclusieve laadpaal voor bewoners aanwezig (+2 pt, gedeeld)</span></label>
+        </fieldset>
+
+        <hr class="divider">
+        <fieldset>
+          <legend class="h2title" style="justify-content:flex-start"><span data-i18n="other_legend">Overig (rubriek 12)</span><button type="button" class="infobtn" data-tip="other_note" aria-label="Meer info" aria-expanded="false">i</button></legend>
+          <label class="check"><input type="checkbox" data-k="deurbel"> <span data-i18n="doorbell">Aanbelfunctie met video- én audioverbinding (+0,25 pt)</span></label>
+        </fieldset>
+      </details>
+
+      <!-- Hospitaregeling context -->
+      <div class="lawcard">
+        <h2 data-i18n="hospita_h2">Daarnaast: de hospitaregeling (contract &amp; belasting)</h2>
+        <p style="margin-top:0" data-i18n="hospita_intro">Bijzondere regels voor het huurcontract bij hospitaverhuur:</p>
+        <dl>
+          <dt data-i18n="hospita_dt1">Eerste 9 maanden</dt>
+          <dd data-i18n="hospita_dd1">Proeftijd: opzeggen zonder reden kan, met 3 maanden opzegtermijn. Nog geen huurbescherming.</dd>
+          <dt data-i18n="hospita_dt2">Na 9 maanden</dt>
+          <dd data-i18n="hospita_dd2">Volledige huurbescherming: opzeggen kan dan alleen via de rechter, op wettelijke grond.</dd>
+          <dt data-i18n="hospita_dt3">Belastingvrije kamerverhuur</dt>
+          <dd data-i18n-html="hospita_dd3">Tot een jaarlijks grensbedrag belastingvrij. Bedrag wijzigt jaarlijks &mdash; check <a href="https://www.belastingdienst.nl" target="_blank" rel="noopener">belastingdienst.nl</a>.</dd>
+          <dt data-i18n="hospita_dt4">Voorwaarden</dt>
+          <dd data-i18n="hospita_dd4">Huurder is 18+, geen partner, staat op hetzelfde adres, en deelt met u minstens één voorziening (keuken, douche of toilet).</dd>
+        </dl>
+        <p style="margin:12px 0 0" data-i18n-html="hospita_link"><a href="https://www.rijksoverheid.nl/onderwerpen/woning-verhuren/vraag-en-antwoord/wat-moet-ik-weten-als-ik-een-hospitakamer-wil-verhuren" target="_blank" rel="noopener">Lees meer (Rijksoverheid) →</a></p>
+      </div>
+
+    </main>
+
+    <aside class="summary">
+      <div>
+        <span class="label" data-i18n="summary_rent_label">Maximale kale huur per maand</span>
+        <div class="rent"><span class="mono" id="rentOut">&euro; 0,00</span><small id="rentNote"></small></div>
+      </div>
+      <div class="points"><span data-i18n="summary_points_label">Puntentotaal:</span> <b class="mono" id="pointsOut">0</b></div>
+      <div class="breakdown" id="breakdownOut"></div>
+    </aside>
+  </div>
+
+  <footer class="legal">
+    <div data-i18n-html="footer1">Onafhankelijk hulpmiddel, geen officieel Huurcommissie-product. Peildatum 1 januari 2026. Bronnen &amp; beperkingen: zie "Bronnen &amp; hulp" bovenaan.</div>
+    <div data-i18n-html="footer_contact">Klopt er iets niet, heeft u vragen of opmerkingen? Stuur een bericht naar <a href="mailto:joozey@protonmail.com">joozey@protonmail.com</a>.</div>
+  </footer>
+</div>
+
+<div id="tipPopover" role="tooltip" hidden></div>
+
+<dialog id="sourcesModal">
+  <div class="modal-inner">
+    <div class="modal-head">
+      <h2 data-i18n="modal_title">Bronnen &amp; hulp</h2>
+      <button type="button" class="modal-close" id="closeSources" data-i18n="modal_close">Sluiten</button>
+    </div>
+    <p data-i18n-html="modal_disclaimer">Gemaakt met behulp van <b>Claude Sonnet 5</b> (Anthropic), niet gelieerd aan de Huurcommissie of de Rijksoverheid. De tool zelf draait op geen enkel taalmodel: eenmaal gebouwd rekent hij alleen met vaste, vooraf ingevoerde regels en tabellen &mdash; er wordt niets "bedacht" tijdens gebruik.<br><br><b>Dit is een indicatie, geen bron van waarheid.</b> Verifieer een concreet bedrag altijd bij de officiële bronnen hieronder, of vraag een uitspraak aan bij de Huurcommissie.<br><br>De <b>Engelse vertaling</b> is bedoeld als hulp, niet als juridische tekst: nuances in Nederlandse wetgeving vertalen niet altijd perfect. Ga bij twijfel uit van de Nederlandse tekst en de originele bronnen.</p>
+
+    <div class="modal-section-title" data-i18n="modal_sources_title">Gebruikte bronnen</div>
+    <ul class="srclist">
+      <li>
+        <span class="srctitle">Huurcommissie &ndash; <a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte" target="_blank" rel="noopener">Beleidsboek Waarderingsstelsel onzelfstandige woonruimte</a> (versie januari 2026)</span>
+        <span class="srcnote" data-i18n="src_note_beleidsboek">Alle rekenregels en puntentabellen in dit hulpmiddel (rubrieken 1 t/m 14) komen uit dit document. De "lees meer"-links per onderdeel verwijzen naar de webversie van hoofdstuk 1 en 2 hiervan.</span>
+      </li>
+      <li>
+        <span class="srctitle">Huurcommissie &ndash; <a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/bijlage-2-maximale-huurprijsgrenzen-voor-onzelfstandige-woningen" target="_blank" rel="noopener">Bijlage 2: Maximale huurprijsgrenzen voor onzelfstandige woningen</a></span>
+        <span class="srcnote" data-i18n="src_note_bijlage2">De volledige punten-naar-euro-tabel (0&ndash;250 punten) die dit hulpmiddel gebruikt, geldig per 1 januari 2026.</span>
+      </li>
+      <li>
+        <span class="srctitle">Huurcommissie &ndash; <a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/bijlage-1-gemiddelde-woz-waarden-per-vierkante-meter-per-corop-gebied" target="_blank" rel="noopener" data-i18n="src_bijlage1_title">Bijlage 1: Gemiddelde WOZ-waardes per m² per COROP-gebied</a></span>
+        <span class="srcnote" data-i18n="src_note_bijlage1">De regiogemiddeldes die worden gebruikt bij de WOZ-waarde-vergelijking.</span>
+      </li>
+      <li>
+        <span class="srctitle">Rijksoverheid &ndash; <a href="https://www.rijksoverheid.nl/onderwerpen/woning-verhuren/vraag-en-antwoord/wat-moet-ik-weten-als-ik-een-hospitakamer-wil-verhuren" target="_blank" rel="noopener">Wat moet ik weten als ik een hospitakamer wil verhuren?</a></span>
+        <span class="srcnote" data-i18n="src_note_rijksoverheid">Regels over het huurcontract (proeftijd van 9 maanden) en de kamerverhuurvrijstelling.</span>
+      </li>
+      <li>
+        <span class="srctitle"><a href="https://checkjeprijs.huurcommissie.nl" target="_blank" rel="noopener">checkjeprijs.huurcommissie.nl</a></span>
+        <span class="srcnote" data-i18n="src_note_official">De officiële rekenmodule van de Huurcommissie zelf &mdash; gebruik deze als eindcontrole.</span>
+      </li>
+      <li>
+        <span class="srctitle"><a href="https://www.wozwaardeloket.nl" target="_blank" rel="noopener">WOZ-waardeloket</a></span>
+        <span class="srcnote" data-i18n="src_note_woz">Officiële opzoekpagina voor de laatst vastgestelde WOZ-waarde van een adres.</span>
+      </li>
+      <li>
+        <span class="srctitle"><a href="https://www.ep-online.nl" target="_blank" rel="noopener">EP-online</a></span>
+        <span class="srcnote" data-i18n="src_note_ep">Officiële opzoekpagina voor het geldige energielabel of de energie-index van een adres.</span>
+      </li>
+      <li>
+        <span class="srctitle"><a href="https://www.belastingdienst.nl" target="_blank" rel="noopener">Belastingdienst</a></span>
+        <span class="srcnote" data-i18n="src_note_belasting">Voor het actuele grensbedrag van de kamerverhuurvrijstelling &mdash; dit bedrag wijzigt jaarlijks.</span>
+      </li>
+    </ul>
+
+    <div class="modal-section-title" data-i18n="modal_limits_title">Wat deze tool niet doet</div>
+    <p style="font-size:13px; color:var(--muted); margin:4px 0 0" data-i18n="modal_limits_text">Woonvoorzieningen voor mensen met een handicap (rubriek 7) en de +35%-opslag voor zorgwoningen (rubriek 12) zijn niet verwerkt. Enkele nuances bij gedeelde wastafels in een vertrek (in plaats van de badkamer) zijn vereenvoudigd. Bij twijfel: gebruik de officiële rekenmodule of vraag de Huurcommissie om een uitspraak.</p>
+  </div>
+</dialog>
+<script>
+(function(){
+  var PRICE = [0.00,10.33,20.56,30.77,40.89,51.12,61.29,71.47,81.62,91.85,102.06,112.23,122.38,132.57,142.76,152.92,163.13,173.33,183.54,193.63,203.87,214.04,224.29,234.44,244.59,254.83,264.95,275.10,285.37,295.54,305.73,315.89,326.12,336.29,346.45,356.69,366.90,377.02,387.18,397.42,407.58,417.73,427.95,438.17,448.30,458.46,468.73,478.86,489.09,499.27,509.44,519.58,529.80,539.99,550.19,560.36,570.54,580.70,590.95,601.06,611.28,616.58,621.84,627.09,632.41,637.63,642.97,648.24,653.44,658.79,664.02,669.35,674.58,679.91,685.17,690.38,695.67,700.94,706.23,711.49,716.80,722.09,727.34,732.60,737.95,743.13,748.46,753.67,759.00,764.30,769.54,774.81,780.09,785.36,790.62,795.90,801.20,806.50,811.77,817.05,822.35,827.56,832.87,838.13,843.38,848.66,853.95,859.20,864.55,869.74,875.11,880.31,885.60,890.88,896.12,901.43,906.72,911.93,917.25,922.50,927.76,933.11,938.38,943.66,948.93,954.22,959.49,964.72,970.03,975.32,980.64,985.86,991.17,996.41,1001.61,1006.93,1012.22,1017.52,1022.77,1028.04,1033.34,1038.58,1043.83,1049.18,1054.44,1059.71,1065.00,1070.25,1075.55,1080.84,1086.10,1091.41,1096.66,1101.93,1107.14,1112.46,1117.68,1123.03,1128.27,1133.60,1138.85,1144.08,1149.44,1154.61,1159.96,1165.22,1170.50,1175.77,1181.04,1186.30,1191.57,1196.87,1202.15,1207.42,1212.67,1218.02,1223.21,1228.53,1233.79,1239.07,1244.30,1249.58,1254.86,1260.15,1265.46,1270.72,1276.03,1281.26,1286.57,1291.84,1297.08,1302.39,1307.68,1312.98,1318.21,1323.50,1328.72,1333.99,1339.27,1344.59,1349.82,1355.13,1360.38,1365.67,1370.97,1376.23,1381.49,1386.79,1392.08,1397.33,1402.63,1407.88,1413.16,1418.45,1423.75,1429.01,1434.29,1439.55,1444.84,1450.10,1455.36,1460.63,1465.91,1471.19,1476.46,1481.71,1487.01,1492.30,1497.54,1502.84,1508.14,1513.44,1518.70,1523.90,1529.25,1534.49,1539.78,1545.06,1550.33,1555.59,1560.88,1566.15,1571.42,1576.76,1581.95,1587.27,1592.52,1597.81,1603.11,1608.36,1613.63];
+
+  var COROP = [["Oost-Groningen",2184],["Delfzijl en omgeving",2015],["Overig Groningen",2777],
+    ["Friesland (Noord)",2275],["Friesland (Zuid-West)",2393],["Friesland (Zuid-Oost)",2583],
+    ["Drenthe (Noord)",2738],["Drenthe (Zuid-Oost)",2269],["Drenthe (Zuid-West)",2640],
+    ["Overijssel (Noord)",3065],["Overijssel (Zuid-West)",3326],["Twente",2958],
+    ["Veluwe",3815],["Achterhoek",2820],["Arnhem/Nijmegen",3511],["Gelderland (Zuid-West)",3403],
+    ["Utrecht",4684],["Kop van Noord-Holland",3124],["Alkmaar en omgeving",4164],["IJmond",4206],
+    ["Agglomeratie Haarlem",5582],["Zaanstreek",4099],["Groot Amsterdam",6378],["Het Gooi- en Vechtstreek",5100],
+    ["Agglomeratie Leiden en Bollenstreek",4668],["Agglomeratie 's-Gravenhage",4342],["Delft en Westland",4386],
+    ["Zuid-Holland (Oost)",3875],["Groot-Rijnmond",3884],["Zuid-Holland (Zuidoost-Zuid)",3582],
+    ["Zeeuwsch-Vlaanderen",2287],["Overig Zeeland",2806],["Brabant (West-Noord)",3323],
+    ["Brabant (Midden-Noord)",3370],["Brabant (Noordoost-Noord)",3456],["Brabant (Zuidoost-Noord)",3531],
+    ["Limburg (Noord)",2693],["Limburg (Midden)",2633],["Limburg (Zuid)",2486],["Flevoland",3310]];
+
+  var I18N = {
+    nl: {
+      eyebrow: "Woningwaarderingsstelsel onzelfstandige woonruimte (WWSO)",
+      h1: "Hospita Kamerprijs Rekentool",
+      intro: "Bereken de wettelijke maximale kale huur voor een kamer in uw huis, met dezelfde puntentelling als de Huurcommissie.",
+      lastupdated: 'Laatst gecontroleerd tegen de officiële bronnen: <b>30 augustus 2026</b>. Wetgeving kan sindsdien gewijzigd zijn.',
+      helpbtn: "Bronnen & hulp",
+      disclaimer: 'Gemaakt met behulp van <b>Claude Sonnet 5</b>. <a href="#" id="disclaimerSourcesLink">Lees meer</a>.',
+      sector_h2: "Eerst dit: kamers zitten altijd in de sociale sector",
+      sector_p1: "Een kamer met gedeelde voorzieningen valt altijd in de sociale sector, ongeacht het puntenaantal: de huurder kan de huur altijd laten toetsen door de Huurcommissie.",
+      sector_p2: "Dit is anders dan bij hele zelfstandige woningen, die boven 186 punten vrije-sectorhuur mogen vragen.",
+      sector_link: '<a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/hoofdstuk-1---basisinformatie-woningwaardering-van-een-onzelfstandige-woonruimte#dcfbb56488" target="_blank" rel="noopener">Lees meer (Huurcommissie, §1.2) →</a>',
+      room_h2: "Uw kamer",
+      room_sub: 'Rubriek 1 & 2: eigen (privé) vertrekken en overige ruimten. 1 punt per m² voor een vertrek (slaap-/woonkamer), 0,75 punt per m² voor overige ruimte (bijv. eigen bergruimte). Verwarming valt onder rubriek 3.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#856768037d" target="_blank" rel="noopener">Lees meer (rubriek 1 &amp; 2) →</a>',
+      room_area_label: "Oppervlakte van de kamer (m²)",
+      room_area_hint: "Binnenmaats, muur tot muur, op 1,50 m hoogte gemeten",
+      room_extra_label: "Eigen overige ruimte (m²)",
+      room_extra_hint: "Bijv. eigen berging/kastruimte die geen vertrek is",
+      room_heated_label: "Verwarmde privévertrekken",
+      room_heated_hint: "2 pt per vertrek, vaste verwarming",
+      room_heated_extra_label: "Verwarmde overige/verkeersruimte",
+      room_heated_extra_hint: "1 pt elk, max. 4 pt",
+      room_cooled_label: "Ruimtes die ook gekoeld kunnen worden (airco, warmtepomp)",
+      room_cooled_hint: "1 pt elk, max. 2 pt",
+      room_note8m2: '<b>Kamer &lt; 8 m²?</b> −4 punten automatisch verwerkt (zie Aftrekpunten).',
+      shared_h2: "Gedeelde ruimtes",
+      shared_sub: 'Rubriek 1, 2, 3 & 9: ruimtes waartoe de huurder gebruiksrecht heeft samen met anderen (woonkamer, keuken, badkamer, hal, tuinberging). Punten worden gelijk verdeeld over alle kamers die er toegang toe hebben.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#4a47ba4694" target="_blank" rel="noopener">Lees meer (rubriek 9) →</a>',
+      shared_n_label: "Aantal (andere) verhuurde kamers dat dit ook deelt",
+      shared_n_hint: "Tel deze kamer zelf mee. Bij één hospitakamer meestal 1. Uw eigen woongedeelte telt niet mee.",
+      shared_living_label: "Gedeelde woonkamer (m²)",
+      shared_living_heated: "Woonkamer is verwarmd",
+      shared_kitchen_label: "Vloeroppervlakte gedeelde keuken (m²)",
+      shared_kitchen_hint: 'Alleen als eigen afgesloten ruimte — bij open keuken telt dit bij de aangrenzende kamer. Aanrecht/apparatuur staat los hieronder bij "Keuken".',
+      shared_kitchen_heated: "Keuken is verwarmd",
+      shared_bath_label: "Gedeelde badkamer/toilet, als vertrek (m²)",
+      shared_bath_heated: "Badkamer is verwarmd",
+      shared_other_label: "Gedeelde overige ruimte (m²)",
+      shared_other_hint: "Bijv. hal, gedeelde berging, fietsenstalling",
+      shared_other_heated: "Overige ruimte is verwarmd",
+      shared_cooled_label: "Gedeelde ruimtes die ook gekoeld kunnen worden (airco, warmtepomp)",
+      shared_cooled_hint: "1 pt elk, max. 2 pt in totaal, wordt ook gedeeld",
+      energy_h2: "Energieprestatie",
+      energy_sub: 'Rubriek 4: telt over de oppervlakte van uw privévertrek(ken) plus het aan u toegerekende deel van gedeelde vertrekken (overige ruimten tellen hier niet mee). Gebaseerd op het geldige energielabel (NTA 8800, afgegeven op/na 1 jan 2021) of anders het bouwjaar.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#5dc2e8207d" target="_blank" rel="noopener">Lees meer (rubriek 4) →</a>',
+      energy_method_label: "Methode",
+      energy_method_label_opt: "Energielabel (NTA 8800)",
+      energy_method_year_opt: "Geen geldig label → bouwjaar",
+      energy_label_label: "Energielabel",
+      energy_year_label: "Bouwjaar",
+      year_2002: "2002 of later (0,65 pt/m²)",
+      year_2000: "2000–2001 (0,50 pt/m²)",
+      year_1992: "1992–1999 (0,35 pt/m²)",
+      year_1984: "1984–1991 (0,20 pt/m²)",
+      year_1979: "1979–1983 (−0,05 pt/m²)",
+      year_1977: "1977–1978 (−0,10 pt/m²)",
+      year_1976: "1976 of ouder (−0,15 pt/m²)",
+      energy_note: 'Label opzoeken (10 jaar geldig): <a href="https://www.ep-online.nl" target="_blank" rel="noopener">ep-online.nl</a>',
+      kitchen_h2: "Keuken",
+      kitchen_sub: 'Rubriek 5. Alleen van toepassing als de keuken voldoet aan de basiseisen: aan-/afvoer water, kookaansluitpunt, aanrechtblad van min. 1 meter, twee inbouwkasten (min. 50 cm breed), waterdichte wandafwerking. Punten worden gedeeld door het aantal kamers uit "Gedeelde ruimtes" hierboven. Geldt ook bij een open keuken, ongeacht of het een eigen vertrek is.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#b5860e9a14" target="_blank" rel="noopener">Lees meer (rubriek 5) →</a>',
+      kitchen_counter_label: "Lengte van het aanrechtblad",
+      counter_0: "Geen keuken / korter dan 1 m (0 pt)",
+      counter_4: "1–2 meter (4 pt)",
+      counter_7: "2–3 meter (7 pt)",
+      counter_10: "Langer dan 3 meter (10 pt)",
+      counter_13: "Langer dan 5 meter, bij 8+ kamers (13 pt)",
+      kitchen_extra_summary: "Extra voorzieningen in de keuken",
+      kitchen_extra_sub: '<b>Inbouw</b> is niet gedefinieerd in het beleidsboek; wordt doorgaans opgevat als: vast en niet zonder sporen te verwijderen (dus geen losse apparaten). <b>Kastruimte</b> hoort bij de (gedeelde) keuken, niet bij persoonlijke opslag. Totaal maximaal evenveel punten als de aanrechtlengte hierboven oplevert.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#b5860e9a14" target="_blank" rel="noopener">Lees meer (rubriek 5) →</a>',
+      kx_afzuig: "Afzuiginstallatie (0,75 pt)",
+      kx_inductie: "Inbouw kookplaat inductie (1,75 pt)",
+      kx_keramisch: "Inbouw kookplaat keramisch (1 pt)",
+      kx_gas: "Inbouw kookplaat gas (0,50 pt)",
+      kx_koelkast: "Inbouw koelkast (1 pt)",
+      kx_vrieskast: "Inbouw vrieskast (0,75 pt)",
+      kx_ovenel: "Inbouw oven elektrisch (1 pt)",
+      kx_ovengas: "Inbouw oven gas (0,50 pt)",
+      kx_magnetron: "Inbouw magnetron (1 pt)",
+      kx_vaatwasser: "Inbouw vaatwasmachine (1,50 pt)",
+      kx_eenhandsmengkraan: "Eénhandsmengkraan (0,25 pt)",
+      kx_thermokraan: "Thermostatische mengkraan (0,50 pt)",
+      kx_kokendwater: "Kokendwaterfunctie (0,50 pt)",
+      kx_extrakast_label: "Extra kastruimte boven het minimum, per 60 cm (0,75 pt elk)",
+      bath_h2: "Sanitair",
+      bath_sub: 'Rubriek 6: toilet, wastafel, douche/bad. Ook hier worden de punten gedeeld door het aantal kamers dat toegang heeft.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#fe5f03b9fe" target="_blank" rel="noopener">Lees meer (rubriek 6) →</a>',
+      bath_toilet_label: "Toilet",
+      toilet_none: "Geen",
+      toilet_staand_apart: "Staand, in aparte toiletruimte (3 pt)",
+      toilet_staand_bad: "Staand, in de badkamer (2 pt)",
+      toilet_hangend_apart: "Hangend, in aparte toiletruimte (3,75 pt)",
+      toilet_hangend_bad: "Hangend, in de badkamer (2,75 pt)",
+      bath_shower_label: "Douche / bad",
+      shower_none: "Geen",
+      shower_douche: "Douche (3 pt)",
+      shower_bad: "Bad (5 pt)",
+      shower_combi: "Bad/douche-combinatie (6 pt)",
+      bath_sink_label: "Wastafels in de badkamer",
+      bath_sink_hint: "1 pt per stuk",
+      bath_sinkmp_label: "Meerpersoonswastafels in de badkamer",
+      bath_sinkmp_hint: "Min. 70 cm breed, 2 kranen — 1,50 pt per stuk",
+      bath_extra_summary: "Extra sanitaire voorzieningen",
+      bath_extra_sub: 'Alleen tellen als de badruimte een waterdichte vloer- én wandafwerking heeft, minimaal 50% van het oppervlak 2,00 m hoog is, en een wastafel met mengkraan &amp; spiegel aanwezig is. Maximaal evenveel punten als toilet + douche/bad + wastafels hierboven samen.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#fe5f03b9fe" target="_blank" rel="noopener">Lees meer (rubriek 6) →</a>',
+      sx_bubbel: "Bubbelfunctie van het bad (1,50 pt)",
+      sx_afscheiding: "Gemonteerde volledige doucheafscheiding (1,25 pt)",
+      sx_handdoekrad: "Handdoekradiator (0,75 pt)",
+      sx_kastje: "Ingebouwd kastje met wastafel (1 pt)",
+      sx_kastruimte: "Kastruimte, min. 40 cm breed/hoog (0,75 pt)",
+      sx_stopcontact: "Stopcontact bij wastafel (0,25 pt)",
+      sx_eenhandsmengkraan: "Eénhandsmengkraan (0,25 pt)",
+      sx_thermokraan: "Thermostatische mengkraan (0,50 pt)",
+      outdoor_h2: "Buitenruimte",
+      outdoor_sub: 'Rubriek 8: eigen tuin/balkon/terras en gedeelde buitenruimte. Samen maximaal 15 punten.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#d22e74d7b2" target="_blank" rel="noopener">Lees meer (rubriek 8) →</a>',
+      outdoor_priv_label: "Eigen buitenruimte (m²)",
+      outdoor_priv_hint: "Exclusief gebruiksrecht volgens het huurcontract — 2 pt + 0,35 pt/m²",
+      outdoor_shared_label: "Gedeelde buitenruimte (m²)",
+      outdoor_shared_hint: "Bijv. gezamenlijke tuin — 0,75 pt/m², gedeeld",
+      woz_h2: "WOZ-waarde",
+      woz_sub: 'Gebaseerd op de WOZ-waarde per m² van de hele woning t.o.v. het regiogemiddelde. Zoek op via het <a href="https://www.wozwaardeloket.nl" target="_blank" rel="noopener">WOZ-waardeloket</a>.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#f9860d6c0f" target="_blank" rel="noopener">Lees meer (rubriek 11) →</a> · <a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/bijlage-1-gemiddelde-woz-waarden-per-vierkante-meter-per-corop-gebied" target="_blank" rel="noopener">Bijlage 1: WOZ-tabel →</a>',
+      woz_short: 'Let op: van de <b>hele woning</b>, niet alleen de kamer.',
+      woz_value_label: "WOZ-waarde hele woning (€)",
+      woz_value_ph: "bijv. 350000",
+      woz_area_label: "Gebruiksoppervlakte hele woning (m²)",
+      woz_area_ph: "bijv. 120",
+      woz_region_label: "Regio (COROP-gebied)",
+      woz_note_default: "Vul de WOZ-waarde, oppervlakte en regio in om de punten te berekenen. Zonder invoer rekent de tool met het minimum van 10 punten.",
+      deduct_h2: "Aftrekpunten",
+      deduct_sub: 'Rubriek 13. Vier situaties leveren elk &minus;4 punten op, en zijn juist bij hospitakamers relevant om te checken.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#1d8c9fc0b8" target="_blank" rel="noopener">Lees meer (rubriek 13) →</a>',
+      deduct_8m2: 'Totale oppervlakte privévertrek(ken) kleiner dan 8 m² <i>(automatisch bepaald uit "Uw kamer" hierboven)</i>',
+      deduct_hospita: "<b>Hospita-situatie:</b> u (verhuurder) woont zelf in de woning, en de kamer of het sanitair waartoe de huurder toegang heeft is alleen bereikbaar via uw eigen woon- of slaapvertrek",
+      deduct_glas: "Raamoppervlak in het hoofdvertrek kleiner dan 0,75 m² zichtbaar glas",
+      deduct_hoograam: "Laagste raamkozijn van het hoofdvertrek meer dan 1,60 m boven de vloer",
+      special_h2: "Bijzondere situaties",
+      special_sub: "Monumentenstatus, parkeerplek, laadpaal en video-deurbel: minder gangbaar, maar kan relevant zijn.",
+      mon_legend: "Monument / beschermd gezicht (rubriek 14)",
+      mon_rijk: "Rijksmonument",
+      mon_rijk_na: "Huurcontract op/na 1 juli 2024 → +35% op de max. huur",
+      mon_rijk_voor: "Huurcontract vóór 1 juli 2024 → +10 punten",
+      mon_gemeente: "Gemeentelijk of provinciaal monument (+15% op de max. huur)",
+      mon_dorpsgezicht: "Beschermd dorps- of stadsgezicht, gebouwd vóór 1965 (+5% op de max. huur)",
+      mon_note: 'Bij een energielabel E, F of G geldt voor monumenten geen strafpunten bij "Energieprestatie" — die rubriek telt dan als 0 in plaats van negatief. De tool verwerkt dit automatisch zodra u hierboven een monument aanvinkt.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#9afb1e85e9" target="_blank" rel="noopener">Lees meer (opslagen, rubriek 14) →</a>',
+      park_legend: "Gedeelde parkeerplek (rubriek 10)",
+      park_note: 'Punten voor een gemeenschappelijke parkeerplek, gedeeld door het aantal adressen en kamers met toegang.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#c1d8e8c923" target="_blank" rel="noopener">Lees meer (rubriek 10) →</a>',
+      park_type_label: "Type parkeerplek",
+      park_none: "Geen",
+      park_garage: "Afgesloten parkeergarage (9 pt)",
+      park_covered: "Overdekt, bijv. carport (6 pt)",
+      park_open: "Onoverdekt (4 pt)",
+      park_addr_label: "Aantal adressen dat de plek deelt",
+      park_ev: "Exclusieve laadpaal voor bewoners aanwezig (+2 pt, gedeeld)",
+      other_legend: "Overig (rubriek 12)",
+      other_note: 'Aanbelfunctie met video- en audioverbinding levert 0,25 punt op, niet gedeeld.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#f6a1f7f727" target="_blank" rel="noopener">Lees meer (rubriek 12) →</a>',
+      doorbell: "Aanbelfunctie met video- én audioverbinding (+0,25 pt)",
+      hospita_h2: "Daarnaast: de hospitaregeling (contract & belasting)",
+      hospita_intro: "Bijzondere regels voor het huurcontract bij hospitaverhuur:",
+      hospita_dt1: "Eerste 9 maanden",
+      hospita_dd1: "Proeftijd: opzeggen zonder reden kan, met 3 maanden opzegtermijn. Nog geen huurbescherming.",
+      hospita_dt2: "Na 9 maanden",
+      hospita_dd2: "Volledige huurbescherming: opzeggen kan dan alleen via de rechter, op wettelijke grond.",
+      hospita_dt3: "Belastingvrije kamerverhuur",
+      hospita_dd3: 'Tot een jaarlijks grensbedrag belastingvrij. Bedrag wijzigt jaarlijks — check <a href="https://www.belastingdienst.nl" target="_blank" rel="noopener">belastingdienst.nl</a>.',
+      hospita_dt4: "Voorwaarden",
+      hospita_dd4: "Huurder is 18+, geen partner, staat op hetzelfde adres, en deelt met u minstens één voorziening (keuken, douche of toilet).",
+      hospita_link: '<a href="https://www.rijksoverheid.nl/onderwerpen/woning-verhuren/vraag-en-antwoord/wat-moet-ik-weten-als-ik-een-hospitakamer-wil-verhuren" target="_blank" rel="noopener">Lees meer (Rijksoverheid) →</a>',
+      summary_rent_label: "Maximale kale huur per maand",
+      summary_points_label: "Puntentotaal:",
+      sticky_points_label: "punten",
+      footer1: 'Onafhankelijk hulpmiddel, geen officieel Huurcommissie-product. Peildatum 1 januari 2026. Bronnen &amp; beperkingen: zie "Bronnen &amp; hulp" bovenaan.',
+      footer_contact: 'Klopt er iets niet, heeft u vragen of opmerkingen? Stuur een bericht naar <a href="mailto:joozey@protonmail.com">joozey@protonmail.com</a>.',
+      modal_title: "Bronnen & hulp",
+      modal_close: "Sluiten",
+      modal_disclaimer: 'Gemaakt met behulp van <b>Claude Sonnet 5</b> (Anthropic), niet gelieerd aan de Huurcommissie of de Rijksoverheid. De tool zelf draait op geen enkel taalmodel: eenmaal gebouwd rekent hij alleen met vaste, vooraf ingevoerde regels en tabellen — er wordt niets "bedacht" tijdens gebruik.<br><br><b>Dit is een indicatie, geen bron van waarheid.</b> Verifieer een concreet bedrag altijd bij de officiële bronnen hieronder, of vraag een uitspraak aan bij de Huurcommissie.<br><br>De <b>Engelse vertaling</b> is bedoeld als hulp, niet als juridische tekst: nuances in Nederlandse wetgeving vertalen niet altijd perfect. Ga bij twijfel uit van de Nederlandse tekst en de originele bronnen.',
+      modal_sources_title: "Gebruikte bronnen",
+      src_note_beleidsboek: 'Alle rekenregels en puntentabellen in dit hulpmiddel (rubrieken 1 t/m 14) komen uit dit document. De "lees meer"-links per onderdeel verwijzen naar de webversie van hoofdstuk 1 en 2 hiervan.',
+      src_note_bijlage2: "De volledige punten-naar-euro-tabel (0–250 punten) die dit hulpmiddel gebruikt, geldig per 1 januari 2026.",
+      src_bijlage1_title: "Bijlage 1: Gemiddelde WOZ-waardes per m² per COROP-gebied",
+      src_note_bijlage1: "De regiogemiddeldes die worden gebruikt bij de WOZ-waarde-vergelijking.",
+      src_note_rijksoverheid: "Regels over het huurcontract (proeftijd van 9 maanden) en de kamerverhuurvrijstelling.",
+      src_note_official: "De officiële rekenmodule van de Huurcommissie zelf — gebruik deze als eindcontrole.",
+      src_note_woz: "Officiële opzoekpagina voor de laatst vastgestelde WOZ-waarde van een adres.",
+      src_note_ep: "Officiële opzoekpagina voor het geldige energielabel of de energie-index van een adres.",
+      src_note_belasting: "Voor het actuele grensbedrag van de kamerverhuurvrijstelling — dit bedrag wijzigt jaarlijks.",
+      modal_limits_title: "Wat deze tool niet doet",
+      modal_limits_text: "Woonvoorzieningen voor mensen met een handicap (rubriek 7) en de +35%-opslag voor zorgwoningen (rubriek 12) zijn niet verwerkt. Enkele nuances bij gedeelde wastafels in een vertrek (in plaats van de badkamer) zijn vereenvoudigd. Bij twijfel: gebruik de officiële rekenmodule of vraag de Huurcommissie om een uitspraak.",
+      row_room: "Uw kamer", row_shared: "Gedeelde ruimtes", row_energy: "Energieprestatie", row_kitchen: "Keuken",
+      row_bath: "Sanitair", row_outdoor: "Buitenruimte", row_woz: "WOZ-waarde", row_deduct: "Aftrekpunten",
+      row_parking: "Parkeerplek", row_doorbell: "Video-deurbel", row_monpts: "Monument (punten)", row_surcharge: "Opslag op eindbedrag",
+      rent_note: "kaal, per maand · {n} punten", rent_note_surcharge: " + {p}% opslag"
+    },
+    en: {
+      eyebrow: "Housing Valuation System for room rentals (WWSO)",
+      h1: "Hospita Room Rent Calculator",
+      intro: "Work out the legal maximum bare rent for a room in your house, using the same point system as the Huurcommissie.",
+      lastupdated: 'Last checked against the official sources: <b>30 August 2026</b>. Legislation may have changed since.',
+      helpbtn: "Sources & help",
+      disclaimer: 'Made with the help of <b>Claude Sonnet 5</b>. <a href="#" id="disclaimerSourcesLink">Read more</a>.',
+      sector_h2: "First: rooms always fall in the regulated sector",
+      sector_p1: "A room with shared facilities is always in the regulated sector, no matter the point score: the tenant can always have the rent tested by the Huurcommissie.",
+      sector_p2: "This differs from whole self-contained homes, which may charge free-market rent above 186 points.",
+      sector_link: '<a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/hoofdstuk-1---basisinformatie-woningwaardering-van-een-onzelfstandige-woonruimte#dcfbb56488" target="_blank" rel="noopener">Read more (Huurcommissie, §1.2) →</a>',
+      room_h2: "Your room",
+      room_sub: 'Categories 1 & 2: your own private room(s) and additional space. 1 point per m² for a habitable room (bed-/living room), 0.75 point per m² for additional space (e.g. your own storage). Heating falls under category 3.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#856768037d" target="_blank" rel="noopener">Read more (categories 1 &amp; 2) →</a>',
+      room_area_label: "Floor area of the room (m²)",
+      room_area_hint: "Measured inside the walls, wall-to-wall, at 1.50 m height",
+      room_extra_label: "Own additional space (m²)",
+      room_extra_hint: "E.g. your own storage/closet space that isn't a habitable room",
+      room_heated_label: "Heated private rooms",
+      room_heated_hint: "2 pt per room, fixed heating",
+      room_heated_extra_label: "Heated additional/circulation space",
+      room_heated_extra_hint: "1 pt each, max. 4 pt",
+      room_cooled_label: "Rooms that can also be cooled (AC, heat pump)",
+      room_cooled_hint: "1 pt each, max. 2 pt",
+      room_note8m2: '<b>Room &lt; 8 m²?</b> −4 points applied automatically (see Deduction points).',
+      shared_h2: "Shared spaces",
+      shared_sub: 'Categories 1, 2, 3 & 9: spaces the tenant shares with others (living room, kitchen, bathroom, hallway, garden shed). Points are split equally across all rooms with access.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#4a47ba4694" target="_blank" rel="noopener">Read more (category 9) →</a>',
+      shared_n_label: "Number of (other) rented rooms also sharing this",
+      shared_n_hint: "Count this room itself. For a single hospita room this is usually 1. Your own living quarters don't count.",
+      shared_living_label: "Shared living room (m²)",
+      shared_living_heated: "Living room is heated",
+      shared_kitchen_label: "Floor area of shared kitchen (m²)",
+      shared_kitchen_hint: 'Only if it\'s its own enclosed room — an open-plan kitchen counts under the adjoining room instead. Worktop/appliances are scored separately under "Kitchen" below.',
+      shared_kitchen_heated: "Kitchen is heated",
+      shared_bath_label: "Shared bathroom/toilet, as a room (m²)",
+      shared_bath_heated: "Bathroom is heated",
+      shared_other_label: "Shared additional space (m²)",
+      shared_other_hint: "E.g. hallway, shared storage, bike shed",
+      shared_other_heated: "Additional space is heated",
+      shared_cooled_label: "Shared rooms that can also be cooled (AC, heat pump)",
+      shared_cooled_hint: "1 pt each, max. 2 pt total, also shared",
+      energy_h2: "Energy performance",
+      energy_sub: 'Category 4: counted over the area of your private room(s) plus your allocated share of shared rooms (additional space doesn\'t count here). Based on the valid energy label (NTA 8800, issued on/after 1 Jan 2021), or otherwise the building\'s construction year.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#5dc2e8207d" target="_blank" rel="noopener">Read more (category 4) →</a>',
+      energy_method_label: "Method",
+      energy_method_label_opt: "Energy label (NTA 8800)",
+      energy_method_year_opt: "No valid label → year built",
+      energy_label_label: "Energy label",
+      energy_year_label: "Year built",
+      year_2002: "2002 or later (0.65 pt/m²)",
+      year_2000: "2000–2001 (0.50 pt/m²)",
+      year_1992: "1992–1999 (0.35 pt/m²)",
+      year_1984: "1984–1991 (0.20 pt/m²)",
+      year_1979: "1979–1983 (−0.05 pt/m²)",
+      year_1977: "1977–1978 (−0.10 pt/m²)",
+      year_1976: "1976 or older (−0.15 pt/m²)",
+      energy_note: 'Look up label (valid 10 yrs): <a href="https://www.ep-online.nl" target="_blank" rel="noopener">ep-online.nl</a>',
+      kitchen_h2: "Kitchen",
+      kitchen_sub: 'Category 5. Only applies if the kitchen meets the basic requirements: water supply/drain, cooking connection point, worktop of at least 1 metre, two built-in cupboards (min. 50 cm wide), waterproof wall finish. Points are divided by the number of rooms entered under "Shared spaces" above. Also applies to an open-plan kitchen, regardless of whether it\'s its own separate room.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#b5860e9a14" target="_blank" rel="noopener">Read more (category 5) →</a>',
+      kitchen_counter_label: "Length of the worktop",
+      counter_0: "No kitchen / shorter than 1 m (0 pt)",
+      counter_4: "1–2 metres (4 pt)",
+      counter_7: "2–3 metres (7 pt)",
+      counter_10: "Longer than 3 metres (10 pt)",
+      counter_13: "Longer than 5 metres, with 8+ rooms (13 pt)",
+      kitchen_extra_summary: "Extra kitchen features",
+      kitchen_extra_sub: '<b>"Built-in"</b> isn\'t defined in the policy document; usually read as: fixed and not removable without leaving a mark (so no loose appliances). <b>Cupboard space</b> belongs to the (shared) kitchen, not personal storage. Total capped at whatever the worktop length above scores.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#b5860e9a14" target="_blank" rel="noopener">Read more (category 5) →</a>',
+      kx_afzuig: "Extractor hood (0.75 pt)",
+      kx_inductie: "Built-in induction hob (1.75 pt)",
+      kx_keramisch: "Built-in ceramic hob (1 pt)",
+      kx_gas: "Built-in gas hob (0.50 pt)",
+      kx_koelkast: "Built-in fridge (1 pt)",
+      kx_vrieskast: "Built-in freezer (0.75 pt)",
+      kx_ovenel: "Built-in electric oven (1 pt)",
+      kx_ovengas: "Built-in gas oven (0.50 pt)",
+      kx_magnetron: "Built-in microwave (1 pt)",
+      kx_vaatwasser: "Built-in dishwasher (1.50 pt)",
+      kx_eenhandsmengkraan: "Single-lever mixer tap (0.25 pt)",
+      kx_thermokraan: "Thermostatic mixer tap (0.50 pt)",
+      kx_kokendwater: "Instant boiling-water tap (0.50 pt)",
+      kx_extrakast_label: "Extra cupboard space beyond the minimum, per 60 cm (0.75 pt each)",
+      bath_h2: "Bathroom fixtures",
+      bath_sub: 'Category 6: toilet, sink, shower/bath. These points are also divided by the number of rooms with access.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#fe5f03b9fe" target="_blank" rel="noopener">Read more (category 6) →</a>',
+      bath_toilet_label: "Toilet",
+      toilet_none: "None",
+      toilet_staand_apart: "Floor-standing, in a separate toilet room (3 pt)",
+      toilet_staand_bad: "Floor-standing, in the bathroom (2 pt)",
+      toilet_hangend_apart: "Wall-hung, in a separate toilet room (3.75 pt)",
+      toilet_hangend_bad: "Wall-hung, in the bathroom (2.75 pt)",
+      bath_shower_label: "Shower / bath",
+      shower_none: "None",
+      shower_douche: "Shower (3 pt)",
+      shower_bad: "Bath (5 pt)",
+      shower_combi: "Bath/shower combination (6 pt)",
+      bath_sink_label: "Sinks in the bathroom",
+      bath_sink_hint: "1 pt each",
+      bath_sinkmp_label: "Multi-person sinks in the bathroom",
+      bath_sinkmp_hint: "Min. 70 cm wide, 2 taps — 1.50 pt each",
+      bath_extra_summary: "Extra bathroom features",
+      bath_extra_sub: 'Only counts if the bathroom has a waterproof floor and wall finish, at least 50% of the area is 2.00 m high, and there\'s a sink with mixer tap &amp; mirror. Capped at the total of toilet + shower/bath + sinks above.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#fe5f03b9fe" target="_blank" rel="noopener">Read more (category 6) →</a>',
+      sx_bubbel: "Bath with bubble/jet function (1.50 pt)",
+      sx_afscheiding: "Fully mounted shower screen (1.25 pt)",
+      sx_handdoekrad: "Heated towel rail (0.75 pt)",
+      sx_kastje: "Built-in vanity cabinet with sink (1 pt)",
+      sx_kastruimte: "Cabinet space, min. 40 cm wide/high (0.75 pt)",
+      sx_stopcontact: "Power outlet near the sink (0.25 pt)",
+      sx_eenhandsmengkraan: "Single-lever mixer tap (0.25 pt)",
+      sx_thermokraan: "Thermostatic mixer tap (0.50 pt)",
+      outdoor_h2: "Outdoor space",
+      outdoor_sub: 'Category 8: your own garden/balcony/terrace and shared outdoor space. Combined maximum of 15 points.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#d22e74d7b2" target="_blank" rel="noopener">Read more (category 8) →</a>',
+      outdoor_priv_label: "Private outdoor space (m²)",
+      outdoor_priv_hint: "Exclusive use under the lease — 2 pt + 0.35 pt/m²",
+      outdoor_shared_label: "Shared outdoor space (m²)",
+      outdoor_shared_hint: "E.g. shared garden — 0.75 pt/m², shared",
+      woz_h2: "WOZ value",
+      woz_sub: 'Based on the official property value (WOZ) per m² of the whole house vs. the regional average. Look it up via the <a href="https://www.wozwaardeloket.nl" target="_blank" rel="noopener">WOZ Value Portal</a>.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#f9860d6c0f" target="_blank" rel="noopener">Read more (category 11) →</a> · <a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/bijlage-1-gemiddelde-woz-waarden-per-vierkante-meter-per-corop-gebied" target="_blank" rel="noopener">Appendix 1: WOZ table →</a>',
+      woz_short: 'Note: for the <b>entire house</b>, not just the room.',
+      woz_value_label: "WOZ value of entire house (€)",
+      woz_value_ph: "e.g. 350000",
+      woz_area_label: "Usable floor area of entire house (m²)",
+      woz_area_ph: "e.g. 120",
+      woz_region_label: "Region (COROP area)",
+      woz_note_default: "Enter the WOZ value, area and region to calculate the points. Without input the tool uses the minimum of 10 points.",
+      deduct_h2: "Deduction points",
+      deduct_sub: 'Category 13. Four situations each cost &minus;4 points, and are worth checking specifically for live-in landlord (hospita) setups.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#1d8c9fc0b8" target="_blank" rel="noopener">Read more (category 13) →</a>',
+      deduct_8m2: 'Total private room area smaller than 8 m² <i>(determined automatically from "Your room" above)</i>',
+      deduct_hospita: "<b>Live-in landlord situation:</b> you (the landlord) live in the property yourself, and the room or bathroom the tenant has access to can only be reached via your own living room or bedroom",
+      deduct_glas: "Window glass area in the main room smaller than 0.75 m² of visible glass",
+      deduct_hoograam: "Lowest window sill of the main room more than 1.60 m above the floor",
+      special_h2: "Special circumstances",
+      special_sub: "Heritage status, parking, EV charging and video doorbell: less common, but can be relevant.",
+      mon_legend: "Heritage monument / protected townscape (category 14)",
+      mon_rijk: "National heritage monument (rijksmonument)",
+      mon_rijk_na: "Lease on/after 1 July 2024 → +35% on max. rent",
+      mon_rijk_voor: "Lease before 1 July 2024 → +10 points",
+      mon_gemeente: "Municipal or provincial heritage monument (+15% on max. rent)",
+      mon_dorpsgezicht: "Protected town/village heritage site, built before 1965 (+5% on max. rent)",
+      mon_note: 'For an energy label of E, F or G, monuments get no penalty points under "Energy performance" — that category counts as 0 instead of negative. The tool applies this automatically once you tick a monument box above.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#9afb1e85e9" target="_blank" rel="noopener">Read more (surcharges, category 14) →</a>',
+      park_legend: "Shared parking space (category 10)",
+      park_note: 'Points for a shared parking space, divided by the number of addresses and rooms with access.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#c1d8e8c923" target="_blank" rel="noopener">Read more (category 10) →</a>',
+      park_type_label: "Parking space type",
+      park_none: "None",
+      park_garage: "Enclosed parking garage (9 pt)",
+      park_covered: "Covered, e.g. carport (6 pt)",
+      park_open: "Uncovered (4 pt)",
+      park_addr_label: "Number of addresses sharing the space",
+      park_ev: "Exclusive EV charging point for residents present (+2 pt, shared)",
+      other_legend: "Other (category 12)",
+      other_note: 'A video and audio intercom doorbell scores 0.25 point, not shared.<br><br><a href="https://www.huurcommissie.nl/support/beleidsboeken/waarderingsstelsel-onzelfstandige-woonruimte/algemene-toelichting#f6a1f7f727" target="_blank" rel="noopener">Read more (category 12) →</a>',
+      doorbell: "Video and audio intercom doorbell (+0.25 pt)",
+      hospita_h2: "Also: the live-in landlord (hospita) rules (lease & tax)",
+      hospita_intro: "Special lease rules for live-in landlord (hospita) rentals:",
+      hospita_dt1: "First 9 months",
+      hospita_dd1: "Trial period: you can end the lease without a reason, with 3 months' notice. No rent protection yet.",
+      hospita_dt2: "After 9 months",
+      hospita_dd2: "Full rent protection: ending the lease then requires a court, on a legal ground.",
+      hospita_dt3: "Tax-free room rental",
+      hospita_dd3: 'Tax-free up to an annual threshold. Changes yearly — check <a href="https://www.belastingdienst.nl" target="_blank" rel="noopener">belastingdienst.nl</a>.',
+      hospita_dt4: "Conditions",
+      hospita_dd4: "Tenant is 18+, not your partner, registered at the same address, and shares at least one facility (kitchen, shower or toilet).",
+      hospita_link: '<a href="https://www.rijksoverheid.nl/onderwerpen/woning-verhuren/vraag-en-antwoord/wat-moet-ik-weten-als-ik-een-hospitakamer-wil-verhuren" target="_blank" rel="noopener">Read more (Dutch government) →</a>',
+      summary_rent_label: "Maximum bare rent per month",
+      summary_points_label: "Total points:",
+      sticky_points_label: "points",
+      footer1: 'Independent tool, not an official Huurcommissie product. Valid as of 1 January 2026. Sources &amp; limitations: see "Sources &amp; help" above.',
+      footer_contact: 'Something not right, or questions/comments? Send a message to <a href="mailto:joozey@protonmail.com">joozey@protonmail.com</a>.',
+      modal_title: "Sources & help",
+      modal_close: "Close",
+      modal_disclaimer: 'Made with the help of <b>Claude Sonnet 5</b> (Anthropic), not affiliated with the Huurcommissie or the Dutch government. The tool itself runs no language model: once built, it only computes with fixed, pre-entered rules and tables — nothing is "decided" at runtime.<br><br><b>This is an indicator, not a source of truth.</b> Always verify a specific figure against the official sources below, or request a ruling from the Huurcommissie.<br><br>The <b>English translation</b> is a convenience, not a legal text: nuances in Dutch legislation don\'t always translate perfectly. When in doubt, defer to the Dutch text and the original sources.',
+      modal_sources_title: "Sources used",
+      src_note_beleidsboek: 'All calculation rules and point tables in this tool (categories 1 through 14) come from this document. The "read more" links per section point to its web version, chapters 1 and 2.',
+      src_note_bijlage2: "The complete points-to-euro table (0–250 points) this tool uses, valid as of 1 January 2026.",
+      src_bijlage1_title: "Appendix 1: Average WOZ values per m² per COROP area",
+      src_note_bijlage1: "The regional averages used in the WOZ-value comparison.",
+      src_note_rijksoverheid: "Rules on the lease (9-month trial period) and the room-rental tax exemption.",
+      src_note_official: "The Huurcommissie's own official calculator — use it as a final check.",
+      src_note_woz: "Official lookup page for the last assessed WOZ value of an address.",
+      src_note_ep: "Official lookup page for the valid energy label or energy index of an address.",
+      src_note_belasting: "For the current threshold of the room-rental tax exemption — this amount changes every year.",
+      modal_limits_title: "What this tool doesn't do",
+      modal_limits_text: "Housing adaptations for people with a disability (category 7) and the +35% care-home surcharge (category 12) are not implemented. A few nuances around shared sinks located in a room rather than the bathroom are simplified. When in doubt: use the official calculator or ask the Huurcommissie for a ruling.",
+      row_room: "Your room", row_shared: "Shared spaces", row_energy: "Energy performance", row_kitchen: "Kitchen",
+      row_bath: "Bathroom fixtures", row_outdoor: "Outdoor space", row_woz: "WOZ value", row_deduct: "Deduction points",
+      row_parking: "Parking space", row_doorbell: "Video doorbell", row_monpts: "Monument (points)", row_surcharge: "Surcharge on final amount",
+      rent_note: "bare, per month · {n} points", rent_note_surcharge: " + {p}% surcharge"
+    }
+  };
+
+  var currentLang = 'nl';
+
+  var regioSel = document.querySelector('[data-k="wozRegio"]');
+  COROP.forEach(function(r){
+    var o = document.createElement('option');
+    o.value = r[1]; o.dataset.name = r[0];
+    if (r[0] === 'Groot Amsterdam') o.selected = true;
+    regioSel.appendChild(o);
+  });
+  function refreshRegioLabels(){
+    Array.prototype.forEach.call(regioSel.options, function(o){
+      o.textContent = o.dataset.name + ' (€' + Number(o.value).toLocaleString(currentLang==='nl'?'nl-NL':'en-GB') + '/m²)';
+    });
+  }
+
+  function applyLang(lang){
+    currentLang = lang;
+    if (typeof closeTip === 'function') closeTip();
+    var dict = I18N[lang];
+    document.querySelectorAll('[data-i18n]').forEach(function(el){
+      var key = el.getAttribute('data-i18n');
+      if (dict[key] !== undefined) el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){
+      var key = el.getAttribute('data-i18n-html');
+      if (dict[key] !== undefined) el.innerHTML = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
+      var key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key] !== undefined) el.setAttribute('placeholder', dict[key]);
+    });
+    document.querySelectorAll('[data-lang-btn]').forEach(function(btn){
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-lang-btn') === lang ? 'true' : 'false');
+    });
+    refreshRegioLabels();
+    compute();
+  }
+
+  document.querySelectorAll('[data-lang-btn]').forEach(function(btn){
+    btn.addEventListener('click', function(){ applyLang(btn.getAttribute('data-lang-btn')); });
+  });
+
+  var explicitTheme = 'light';
+  document.documentElement.setAttribute('data-theme', 'light');
+  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+  var themeBtn = document.getElementById('themeToggle');
+  function effectiveTheme(){ return explicitTheme || (mql.matches ? 'dark' : 'light'); }
+  function renderThemeIcon(){ themeBtn.innerHTML = effectiveTheme() === 'dark' ? '&#9789;' : '&#9788;'; }
+  themeBtn.addEventListener('click', function(){
+    explicitTheme = effectiveTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', explicitTheme);
+    renderThemeIcon();
+  });
+  renderThemeIcon();
+
+  var tipEl = document.getElementById('tipPopover');
+  var currentTipBtn = null;
+  function closeTip(){
+    tipEl.hidden = true;
+    if (currentTipBtn) currentTipBtn.setAttribute('aria-expanded', 'false');
+    currentTipBtn = null;
+  }
+  function openTip(btn){
+    var key = btn.getAttribute('data-tip');
+    tipEl.innerHTML = I18N[currentLang][key] || '';
+    tipEl.hidden = false;
+    var r = btn.getBoundingClientRect();
+    tipEl.style.top = (r.bottom + 6) + 'px';
+    tipEl.style.left = Math.max(12, r.left) + 'px';
+    requestAnimationFrame(function(){
+      var maxLeft = window.innerWidth - tipEl.offsetWidth - 12;
+      if (parseFloat(tipEl.style.left) > maxLeft) tipEl.style.left = Math.max(12, maxLeft) + 'px';
+    });
+    btn.setAttribute('aria-expanded', 'true');
+    currentTipBtn = btn;
+  }
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('[data-tip]');
+    if (btn){
+      e.preventDefault(); e.stopPropagation();
+      var wasOpen = currentTipBtn === btn;
+      closeTip();
+      if (!wasOpen) openTip(btn);
+      return;
+    }
+    if (!(e.target.closest && e.target.closest('#tipPopover'))) closeTip();
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeTip(); });
+  window.addEventListener('scroll', closeTip, true);
+  window.addEventListener('resize', closeTip);
+
+  var modal = document.getElementById('sourcesModal');
+  document.getElementById('openSources').addEventListener('click', function(){ modal.showModal(); });
+  document.getElementById('closeSources').addEventListener('click', function(){ modal.close(); });
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'disclaimerSourcesLink'){ e.preventDefault(); modal.showModal(); }
+  });
+  modal.addEventListener('click', function(e){ if (e.target === modal) modal.close(); });
+
+  function val(k){
+    var el = document.querySelector('[data-k="'+k+'"]');
+    if (!el) return 0;
+    if (el.type === 'checkbox') return el.checked;
+    if (el.tagName === 'SELECT' || el.type === 'number') {
+      var n = parseFloat(el.value);
+      return isNaN(n) ? 0 : n;
+    }
+    return el.value;
+  }
+  function r4(x){ return Math.round(x*4)/4; }
+  function eur(x){ return x.toLocaleString(currentLang==='nl'?'nl-NL':'en-GB', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+  function bedragVoorPunten(p){
+    if (p <= 0) return 0;
+    if (p <= 250) return PRICE[Math.round(p)];
+    var extra = (p - 250) * (PRICE[250] - PRICE[249]);
+    return PRICE[250] + extra;
+  }
+
+  function compute(){
+    var dict = I18N[currentLang];
+    var deelN = Math.max(1, val('deelN'));
+
+    var priveVertrekM2 = val('privVertrekM2');
+    var priveOverigeM2 = val('privOverigeM2');
+    var privePts = priveVertrekM2*1 + priveOverigeM2*0.75;
+
+    var gedeeldVertrekM2 = val('woonkamerM2') + val('keukenM2') + val('badkamerM2');
+    var gedeeldOverigeM2 = val('gedeeldOverigeM2');
+    var gedeeldPts = (gedeeldVertrekM2*1 + gedeeldOverigeM2*0.75) / deelN;
+
+    var priveVerwarmdVertrek = val('privVerwarmdVertrek');
+    var priveVerwarmdOverige = Math.min(val('privVerwarmdOverige'), 4);
+    var priveVerkoeld = Math.min(val('privVerkoeld'), 2);
+    var priveR3 = priveVerwarmdVertrek*2 + priveVerwarmdOverige*1 + priveVerkoeld*1;
+
+    var gedeeldVerwarmdVertrekCount = (val('woonkamerVerwarmd')?1:0) + (val('keukenVerwarmd')?1:0) + (val('badkamerVerwarmd')?1:0);
+    var gedeeldVerwarmdOverigeCount = Math.min(val('gedeeldOverigeVerwarmd')?1:0, 4);
+    var gedeeldVerkoeldCount = Math.min(val('gedeeldVerkoeld'), 2);
+    var gedeeldR3 = (gedeeldVerwarmdVertrekCount*2 + gedeeldVerwarmdOverigeCount*1 + gedeeldVerkoeldCount*1) / deelN;
+
+    var priveCardTotal = r4(privePts + priveR3);
+    var gedeeldCardTotal = r4(gedeeldPts + gedeeldR3);
+
+    var monumentActief = val('mon_rijk') || val('mon_gemeente');
+    var energieFactor;
+    if (val('energieMethode') === 'label') {
+      var labelMap = {"A++++":1.00,"A+++":0.95,"A++":0.85,"A+":0.75,"A":0.65,"B":0.50,"C":0.35,"D":0.20,"E":-0.05,"F":-0.10,"G":-0.15};
+      var lbl = document.querySelector('[data-k="energieLabel"]').value;
+      energieFactor = labelMap[lbl];
+      if (monumentActief && (lbl === 'E' || lbl === 'F' || lbl === 'G')) energieFactor = 0;
+    } else {
+      energieFactor = val('energieBouwjaar');
+      if (monumentActief && energieFactor < 0) energieFactor = 0;
+    }
+    var energieM2 = priveVertrekM2 + (gedeeldVertrekM2/deelN);
+    var r4pts = r4(energieFactor * energieM2);
+
+    var keukenBasis = val('aanrecht');
+    var keukenExtra = (val('kx_afzuig')?0.75:0) + (val('kx_inductie')?1.75:0) + (val('kx_keramisch')?1:0) +
+      (val('kx_gas')?0.5:0) + (val('kx_koelkast')?1:0) + (val('kx_vrieskast')?0.75:0) + (val('kx_ovenel')?1:0) +
+      (val('kx_ovengas')?0.5:0) + (val('kx_magnetron')?1:0) + (val('kx_vaatwasser')?1.5:0) +
+      (val('kx_eenhandsmengkraan')?0.25:0) + (val('kx_thermokraan')?0.5:0) + (val('kx_kokendwater')?0.5:0) +
+      (val('kx_extrakast')*0.75);
+    var keukenExtraCapped = Math.min(keukenExtra, keukenBasis);
+    var r5 = r4((keukenBasis + (keukenBasis>0?keukenExtraCapped:0)) / deelN);
+
+    var toilet = val('toilet');
+    var doucheBad = val('doucheBad');
+    var wastafel = val('wastafelCount')*1 + val('wastafelMPCount')*1.5;
+    var sanBasis = toilet + doucheBad + wastafel;
+    var sanExtra = (val('sx_bubbel')?1.5:0) + (val('sx_afscheiding')?1.25:0) + (val('sx_handdoekrad')?0.75:0) +
+      (val('sx_kastje')?1:0) + (val('sx_kastruimte')?0.75:0) + (val('sx_stopcontact')?0.25:0) +
+      (val('sx_eenhandsmengkraan')?0.25:0) + (val('sx_thermokraan')?0.5:0);
+    var sanExtraCapped = Math.min(sanExtra, sanBasis);
+    var r6 = r4((sanBasis + sanExtraCapped) / deelN);
+
+    var priveBuitenM2 = val('priveBuitenM2');
+    var priveBuitenPts = priveBuitenM2 > 0 ? (2 + priveBuitenM2*0.35) : 0;
+    var gedeeldBuitenPts = (val('gedeeldBuitenM2')*0.75) / deelN;
+    var r8 = r4(Math.min(priveBuitenPts + gedeeldBuitenPts, 15));
+
+    var woz = val('wozWaarde');
+    var wozOpp = val('wozOppervlakte');
+    var regioGem = parseFloat(regioSel.value) || 0;
+    var r11 = 10, wozTekst = dict.woz_note_default;
+    if (woz > 0 && wozOpp > 0 && regioGem > 0) {
+      var perM2 = woz / wozOpp;
+      var pct = ((perM2 - regioGem) / regioGem) * 100;
+      if (pct > 10) { r11 = 14; }
+      else if (pct < -10) { r11 = 10; }
+      else { r11 = 12; }
+      var loc = currentLang==='nl'?'nl-NL':'en-GB';
+      wozTekst = '€' + Math.round(perM2).toLocaleString(loc) + '/m² ' + (currentLang==='nl'?'versus regiogemiddelde':'vs. regional average') + ' €' + regioGem.toLocaleString(loc) + '/m² (' + (pct>=0?'+':'') + pct.toFixed(1) + '%) → ' + r11 + (currentLang==='nl'?' punten.':' points.');
+    }
+    document.getElementById('wozUitleg').textContent = wozTekst;
+    document.getElementById('wozUitleg').removeAttribute('data-i18n');
+
+    var klein8 = priveVertrekM2 > 0 && priveVertrekM2 < 8;
+    document.querySelector('[data-k="af_klein8"]').checked = klein8;
+    var aftrekCount = (klein8?1:0) + (val('af_hospita')?1:0) + (val('af_glas')?1:0) + (val('af_hoograam')?1:0);
+    var r13 = aftrekCount * -4;
+
+    var parkeerBasis = val('parkeerType');
+    var parkeerAdressen = Math.max(1, val('parkeerAdressen'));
+    var laadpaalPts = val('laadpaal') ? 2 : 0;
+    var r10 = r4((parkeerBasis + laadpaalPts) / (parkeerAdressen * deelN));
+
+    var r12b = val('deurbel') ? 0.25 : 0;
+
+    var opslagPct = 0;
+    var opslagPunten = 0;
+    if (val('mon_rijk')) {
+      if (document.querySelector('[data-k="mon_rijk_contract"]').value === 'na') opslagPct += 35;
+      else opslagPunten += 10;
+    }
+    if (val('mon_gemeente')) opslagPct += 15;
+    if (val('mon_dorpsgezicht') && !val('mon_rijk') && !val('mon_gemeente')) opslagPct += 5;
+
+    document.querySelector('[data-group="rijkContractGroup"]').style.display = val('mon_rijk') ? 'grid' : 'none';
+    document.querySelector('[data-k="mon_dorpsgezicht"]').disabled = val('mon_rijk') || val('mon_gemeente');
+
+    var totaalRuw = priveCardTotal + gedeeldCardTotal + r4pts + r5 + r6 + r8 + r11 + r13 + r10 + r12b + opslagPunten;
+    var totaal = Math.round(totaalRuw);
+    if (totaal < 0) totaal = 0;
+
+    var bedrag = bedragVoorPunten(totaal);
+    var bedragMetOpslag = bedrag * (1 + opslagPct/100);
+
+    document.querySelector('[data-pts="privé"]').textContent = priveCardTotal + ' pt';
+    document.querySelector('[data-pts="gedeeld"]').textContent = gedeeldCardTotal + ' pt';
+    document.querySelector('[data-pts="energie"]').textContent = r4pts + ' pt';
+    document.querySelector('[data-pts="keuken"]').textContent = r5 + ' pt';
+    document.querySelector('[data-pts="sanitair"]').textContent = r6 + ' pt';
+    document.querySelector('[data-pts="buiten"]').textContent = r8 + ' pt';
+    document.querySelector('[data-pts="woz"]').textContent = r11 + ' pt';
+    document.querySelector('[data-pts="aftrek"]').textContent = r13 + ' pt';
+    var opslagLabel = (opslagPct>0 || opslagPunten>0) ? ('+' + (opslagPunten>0? opslagPunten+' pt':'') + (opslagPct>0? (opslagPunten>0?' / ':'') + opslagPct+'%':'')) : '—';
+    document.querySelector('[data-pts="opslag"]').textContent = opslagLabel;
+
+    document.getElementById('pointsOut').textContent = totaal;
+    document.getElementById('rentOut').textContent = '€ ' + eur(bedragMetOpslag);
+    document.getElementById('stickyPoints').textContent = totaal;
+    document.getElementById('stickyRent').textContent = '€ ' + eur(bedragMetOpslag);
+    var noteText = dict.rent_note.replace('{n}', totaal) + (opslagPct>0 ? dict.rent_note_surcharge.replace('{p}', opslagPct) : '');
+    document.getElementById('rentNote').textContent = noteText;
+
+    var rows = [
+      [dict.row_room, priveCardTotal],
+      [dict.row_shared, gedeeldCardTotal],
+      [dict.row_energy, r4pts],
+      [dict.row_kitchen, r5],
+      [dict.row_bath, r6],
+      [dict.row_outdoor, r8],
+      [dict.row_woz, r11],
+      [dict.row_deduct, r13]
+    ];
+    if (r10 !== 0) rows.push([dict.row_parking, r10]);
+    if (r12b !== 0) rows.push([dict.row_doorbell, r12b]);
+    if (opslagPunten !== 0) rows.push([dict.row_monpts, opslagPunten]);
+
+    var html = rows.map(function(r){
+      return '<div><span>'+r[0]+'</span><span class="mono">'+r[1]+'</span></div>';
+    }).join('');
+    if (opslagPct > 0) {
+      html += '<div><span>'+dict.row_surcharge+'</span><span class="mono">+'+opslagPct+'%</span></div>';
+    }
+    document.getElementById('breakdownOut').innerHTML = html;
+  }
+
+  document.querySelector('[data-k="energieMethode"]').addEventListener('change', function(){
+    var isLabel = this.value === 'label';
+    document.querySelector('[data-group="energieLabelGroup"]').style.display = isLabel ? '' : 'none';
+    document.querySelector('[data-group="energieBouwjaarGroup"]').style.display = isLabel ? 'none' : '';
+    compute();
+  });
+
+  document.addEventListener('input', compute);
+  document.addEventListener('change', compute);
+  applyLang('nl');
+})();
+</script>
+</body>
+</html>
