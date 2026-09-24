@@ -164,31 +164,42 @@
   .btn{ cursor:pointer; font-weight:600; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   .btn:disabled{ opacity:.6; cursor:progress; }
 
-  .maptools{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:2px 0 10px; }
-  .mapwrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
-  @media (min-width:700px){ .mapwrap{ grid-template-columns:minmax(0,1fr) 220px; } }
+  .maptools{ display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin:2px 0 10px; }
+  .mapwrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:12px 18px; }
+  @media (min-width:760px){ .mapwrap{ grid-template-columns:minmax(0,1fr) 230px; } }
   .map{ position:relative; min-height:200px; }
   .map svg{ display:block; width:100%; height:auto; max-height:520px; }
   .map path.pv{ stroke:var(--mapline); stroke-width:1; stroke-linejoin:round; vector-effect:non-scaling-stroke; cursor:pointer; }
   .map path.pv:hover, .map path.pv:focus{ stroke:var(--ink); stroke-width:2; outline:none; }
+  .map path.ca{ stroke:#ffffff; stroke-opacity:.7; stroke-width:.6; vector-effect:non-scaling-stroke; cursor:pointer; }
+  .map path.ca:hover{ stroke:var(--ink); stroke-opacity:1; stroke-width:1.6; }
+  .map svg.catch-mode path.pv{ fill:none; pointer-events:none; stroke:var(--ink); stroke-opacity:.55; stroke-width:1.3; }
   .map text{ pointer-events:none; font-weight:600; fill:#1b1b1b; paint-order:stroke; stroke:rgba(255,255,255,.8); stroke-linejoin:round; }
-  .mapside{ display:flex; flex-direction:column; gap:14px; font-size:12.5px; color:var(--muted); }
-  .scale .bar{ height:12px; border-radius:3px; border:1px solid var(--line); margin:6px 0 3px; }
-  .scale .ticks{ display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
-  .scale .nd{ display:flex; align-items:center; gap:6px; margin-top:8px; }
-  .scale .nd i{ width:14px; height:12px; border-radius:2px; border:1px solid var(--line); background:var(--nodata); flex:none; }
-  .scale .dots-head{ margin-top:12px; }
-  .scale .nd i.dot{ width:11px; height:11px; border-radius:50%; margin:0 1.5px; border:1.5px solid #ffffff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
-  .scale .nd i.dot.old{ background:transparent; border:1.5px solid #8b8a84; box-shadow:none; width:8px; height:8px; margin:0 3px; }
   .map circle.st{ cursor:default; }
-  .weekinfo div{ margin-top:4px; }
-  .weekinfo b{ color:var(--ink); font-size:15px; display:block; }
-  .timeline{ display:flex; align-items:center; gap:12px; margin-top:10px; }
+  .mapside{ display:flex; flex-direction:column; gap:12px; font-size:12px; color:var(--muted); min-width:0; }
+  .scale .cap{ color:var(--ink); font-weight:600; }
+  .scale .bar{ height:10px; border-radius:3px; border:1px solid var(--line); margin:5px 0 2px; }
+  .scale .ticks{ display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
+  .keys{ display:grid; grid-template-columns:auto auto auto; gap:4px 10px; margin-top:8px; }
+  .keys span{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
+  .keys i{ width:11px; height:11px; flex:none; }
+  .keys i.sq{ border-radius:2px; background:var(--nodata); }
+  .keys i.dot{ border-radius:50%; border:1.5px solid #ffffff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
+  .keys i.dot.old{ background:transparent; border-color:#8b8a84; box-shadow:none; width:9px; height:9px; }
+  table.kv{ width:100%; table-layout:fixed; font-size:12px; }
+  table.kv td, table.kv th{ padding:3px 0; border:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  table.kv th{ font-weight:400; color:var(--muted); width:42%; }
+  table.kv td{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+  .timeline{ display:flex; align-items:center; gap:10px; margin-top:6px; }
   .timeline input{ flex:1; min-width:0; accent-color:var(--accent); }
-  .timeline output{ font-size:13px; font-weight:600; min-width:9.5em; text-align:right; font-variant-numeric:tabular-nums; }
+  .timeline output{ font-size:13px; font-weight:600; width:6.6em; flex:none; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .play{ font:inherit; font-size:13px; width:34px; height:34px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
   .play:hover{ border-color:var(--accent); }
   .play:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  details.method table{ font-size:12px; }
+  details.method td{ text-align:left; white-space:normal; }
+  details.method td:first-child{ color:var(--muted); white-space:nowrap; width:1%; padding-right:14px; }
+  .foot .links{ display:flex; gap:12px; }
 
   footer{ margin-top:36px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
   footer a{ color:var(--muted); }
@@ -200,7 +211,7 @@
   <header>
     <span class="eyebrow"><a href="../index.html">Toolbox</a> · RIVM open data</span>
     <h1>COVID-19 in the Netherlands</h1>
-    <p>Sewage surveillance, Infectieradar self-reports and variant sequencing, loaded directly from the RIVM open-data server each time you open this page. RIVM publishes new figures on Wednesdays.</p>
+    <p>Live RIVM open data · updated Wednesdays</p>
   </header>
 
   <div class="controls">
@@ -216,91 +227,117 @@
 
   <div class="grid">
     <section class="card" id="c-sewage">
-      <h2>Virus in sewage, national average</h2>
-      <p class="sub">SARS-CoV-2 RNA particles per 100,000 inhabitants, population-weighted over treatment plants</p>
+      <h2>Virus in sewage, national</h2>
+      <p class="sub">RNA particles per 100,000 inhabitants</p>
       <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
       <div class="chart tall" data-chart></div>
-      <p class="note">Since 7 July 2025 RIVM measures about 133 plants (40%) once a week instead of all plants several times a week, so the curve is coarser from then on.</p>
-      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM, rioolwaterdata landelijk</a></span></div>
+      <div class="foot"><span class="links">
+          <details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <details class="tbl method"><summary>Method</summary><div class="tblwrap"><table><tbody>
+            <tr><td>Value</td><td>Population-weighted mean over stations</td></tr>
+            <tr><td>Sampling</td><td>Since 7 Jul 2025: ~133 stations (40%), weekly</td></tr>
+          </tbody></table></div></details></span>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
 
     <section class="card" id="c-map">
-      <h2>Virus in sewage, per province</h2>
-      <p class="sub" data-mapsub>How fast the virus load in sewage is rising in each province. Drag the slider or press play to step through every week since 2020.</p>
+      <h2>Virus in sewage, by region</h2>
+      <p class="sub">Weekly since 2020</p>
       <div class="maptools">
+        <div class="seg" role="group" aria-label="Regions" id="maplayer">
+          <button type="button" data-layer="provinces" aria-pressed="true">Provinces</button>
+          <button type="button" data-layer="catchments" aria-pressed="false">Catchment areas</button>
+        </div>
         <div class="seg" role="group" aria-label="Map colour" id="mapmode">
           <button type="button" data-mode="growth" aria-pressed="true">Growth</button>
           <button type="button" data-mode="level" aria-pressed="false">Level</button>
         </div>
-        <button class="btn" type="button" id="maploadbtn" data-plantload>Load map data (≈ 9.8 MB)</button>
+        <button class="btn" type="button" id="maploadbtn" data-plantload>Load map data (≈ 10 MB)</button>
       </div>
       <div class="mapwrap">
-        <div class="map" data-map><div class="empty">The map is built from per-plant measurements, which load only when you ask for them.</div></div>
+        <div>
+          <div class="map" data-map><div class="empty">Map data loads on request.</div></div>
+          <div class="timeline" data-timeline hidden>
+            <button type="button" class="play" id="mapplay" aria-label="Play">▶</button>
+            <input type="range" id="mapweek" min="0" max="0" value="0" aria-label="Week">
+            <output id="mapweeklabel" for="mapweek"></output>
+          </div>
+        </div>
         <div class="mapside">
           <div class="scale" data-scale></div>
-          <div class="weekinfo" data-weekinfo></div>
+          <table class="kv" data-stats></table>
         </div>
       </div>
-      <div class="timeline" data-timeline hidden>
-        <button type="button" class="play" id="mapplay" aria-label="Play">▶</button>
-        <input type="range" id="mapweek" min="0" max="0" value="0" aria-label="Week">
-        <output id="mapweeklabel" for="mapweek"></output>
-      </div>
-      <p class="note">A sewage station that serves more than one province counts toward each in proportion to how many people it serves there (CBS, 1 January 2024); in the station counts it belongs to the province it mainly serves. Growth is the trend over the four weeks up to the selected week (a straight-line fit through the log of each weekly level), shown as change per week. Dots are sewage stations, shaded by how recently each one reported; a province's level for a week uses only the stations that reported that week. Since July 2025 RIVM samples about 40% of stations each week, mostly the larger ones. The latest week can be incomplete, and RIVM revises recent values. Four Gelderland stations that closed in 2020–21 are not in the CBS table: they appear as dots but do not count toward a province.</p>
-      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-        <span>Sources: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM per RWZI</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS inwoners per RWZI</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK/CBS boundaries</a>, <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">PDOK/RWS station locations</a></span></div>
+      <div class="foot"><span class="links">
+          <details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <details class="tbl method"><summary>Method</summary><div class="tblwrap"><table><tbody>
+            <tr><td>Growth</td><td>4-week trend, % per week (straight-line fit on log of weekly level)</td></tr>
+            <tr><td>Level</td><td>Mean of stations that reported that week</td></tr>
+            <tr><td>Province</td><td>Stations weighted by people served in the province (CBS, 2024)</td></tr>
+            <tr><td>Catchment area</td><td>Approximate: postcode areas assigned to their main station (CBS, 2024)</td></tr>
+            <tr><td>Area colour</td><td>Grey if the station has not reported in 4 weeks</td></tr>
+            <tr><td>Station counts</td><td>Station counted in the province it mainly serves</td></tr>
+            <tr><td>Sampling</td><td>Since Jul 2025: ~40% of stations per week</td></tr>
+            <tr><td>Latest week</td><td>Can be incomplete; RIVM revises</td></tr>
+            <tr><td>Left out</td><td>4 Gelderland stations closed 2020–21 (dots only)</td></tr>
+          </tbody></table></div></details></span>
+        <span>Sources: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK</a>, <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">RWS</a></span></div>
     </section>
 
     <div class="grid two">
       <section class="card" id="c-pos">
-        <h2>Positive COVID tests, Infectieradar</h2>
-        <p class="sub">% of Infectieradar participants reporting a positive self-test or PCR test, per calendar week</p>
+        <h2>Positive tests, Infectieradar</h2>
+        <p class="sub">% of participants with a positive test, per week</p>
         <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
         <div class="chart" data-chart></div>
         <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/0bae0312-6e26-41dc-a986-74a60e46c249" target="_blank" rel="noopener">RIVM, Infectieradar</a></span></div>
+          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/0bae0312-6e26-41dc-a986-74a60e46c249" target="_blank" rel="noopener">RIVM</a></span></div>
       </section>
 
       <section class="card" id="c-ari">
         <h2>Respiratory symptoms, Infectieradar</h2>
-        <p class="sub">% of participants with acute respiratory infection symptoms (cough, sore throat, shortness of breath, runny nose) in the past week. Covers all respiratory infections, not only COVID-19.</p>
+        <p class="sub">% with symptoms in the past week · all infections</p>
         <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
         <div class="legend" data-legend></div>
         <div class="chart" data-chart></div>
         <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/05b0d961-77fc-4fb5-8c38-0d2df0b6143d" target="_blank" rel="noopener">RIVM, Infectieradar ARI</a></span></div>
+          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/05b0d961-77fc-4fb5-8c38-0d2df0b6143d" target="_blank" rel="noopener">RIVM</a></span></div>
       </section>
     </div>
 
     <section class="card" id="c-var">
-      <h2>Variants in random sequencing samples</h2>
-      <p class="sub">Share of sequenced samples per month, each sample counted once under its most specific listed lineage</p>
+      <h2>Variants</h2>
+      <p class="sub">Share of sequenced samples per month</p>
       <div class="legend" data-legend></div>
       <div class="chart tall" data-chart></div>
-      <p class="note">RIVM leaves out the two most recent weeks. Since mid-2026 only 1–5 samples are sequenced per week, so recent monthly shares rest on a handful of samples. The sample count (n) is in the tooltip and table.</p>
-      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM, kiemsurveillance varianten</a></span></div>
+      <div class="foot"><span class="links">
+          <details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <details class="tbl method"><summary>Method</summary><div class="tblwrap"><table><tbody>
+            <tr><td>Counting</td><td>Each sample under its most specific listed lineage</td></tr>
+            <tr><td>Overlap</td><td>Shares over all assignments in the month</td></tr>
+            <tr><td>Other</td><td>Samples not assigned to a listed lineage</td></tr>
+            <tr><td>Last 2 weeks</td><td>Not published by RIVM</td></tr>
+            <tr><td>Sample size</td><td>1–5 per week since mid-2026 (n in tooltip)</td></tr>
+          </tbody></table></div></details></span>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
 
     <section class="card" id="c-plant">
-      <h2>Virus in sewage, per treatment plant</h2>
-      <p class="sub">Measurements for one treatment plant (RWZI), compared with the national average</p>
+      <h2>Virus in sewage, per station</h2>
+      <p class="sub">One station vs national</p>
       <div class="plantbar">
-        <button class="btn" type="button" id="plantload" data-plantload>Load per-plant data (≈ 9.8 MB)</button>
-        <select id="plantsel" hidden aria-label="Treatment plant"></select>
+        <button class="btn" type="button" id="plantload" data-plantload>Load station data (≈ 10 MB)</button>
+        <select id="plantsel" hidden aria-label="Sewage station"></select>
       </div>
       <div class="legend" data-legend></div>
-      <div class="chart tall" data-chart><div class="empty">Per-plant data loads only when you ask for it.</div></div>
+      <div class="chart tall" data-chart><div class="empty">Station data loads on request.</div></div>
       <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM, rioolwaterdata per RWZI</a></span></div>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
   </div>
 
   <footer>
-    <p>Data: Rijksinstituut voor Volksgezondheid en Milieu (RIVM), <a href="https://data.rivm.nl/covid-19/" target="_blank" rel="noopener">data.rivm.nl/covid-19</a>, public domain. Also listed on <a href="https://data.overheid.nl/" target="_blank" rel="noopener">data.overheid.nl</a>; the "modified" date shown there is the date the dataset was first registered, not the date of the data.</p>
-    <p>The per-variant chart treats counts as nested: per RIVM's metadata, a sub-variant's cases are a subset of its parent's, so each parent keeps only the cases not assigned to a listed sub-variant. Samples not assigned to any listed variant count as "Other". Recent weeks sometimes list one sample under two sibling lineages, so shares are computed over all assignments in the month rather than over the sample count.</p>
-    <p><a href="https://github.com/Josvanegmond/toolbox" target="_blank" rel="noopener">Source on GitHub</a></p>
+    <p>Data: <a href="https://data.rivm.nl/covid-19/" target="_blank" rel="noopener">RIVM</a>, CBS, PDOK · public domain · <a href="https://github.com/Josvanegmond/toolbox" target="_blank" rel="noopener">Source on GitHub</a></p>
   </footer>
 </div>
 
@@ -723,30 +760,54 @@
     }
   }
   const rampCss = () => "linear-gradient(to right," + RAMP.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
+  const pctFmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "%";
   const MODES = {
     // growth: 0%/week or less is white, +25% orange, +50% or more red
-    growth: { value: (p, w) => mapState.growth[p][w], color: (g) => rampColor(g / 50), ticks: ["≤ 0%", "+25%", "≥ +50%"], caption: "Change per week, 4-week trend",
-      fmt: (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "% per week" },
+    growth: { color: (g) => rampColor(g / 50), ticks: ["≤ 0%", "+25%", "≥ +50%"], caption: "Growth per week",
+      fmt: (g) => pctFmtSigned(g) + " / week" },
     // level: log scale from 10 to 1,000 × 10¹¹
-    level: { value: (p, w) => mapState.level[p][w], color: (v) => rampColor((Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: ["≤ 10", "100", "≥ 1,000"], caption: "RNA × 10¹¹ per 100,000 inhabitants",
+    level: { color: (v) => rampColor((Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: ["≤ 10", "100", "≥ 1,000"], caption: "Level, × 10¹¹ per 100k",
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
-  const mapState = { mode: "growth", week: -1, weeks: [], level: [], growth: [], nplants: [], built: false, timer: null,
-    lastWeek: new Map(), stationsTotal: [], updated: [] };
-  // station dots: shade by weeks since the station's latest measurement (blue, so they stand apart from the fills)
+  const mapState = { mode: "growth", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
+    lastWeek: new Map(), stationVal: new Map(), stationsTotal: [], updated: [], legendKey: "" };
+  // station dots: shade by weeks since the station's latest measurement (blue, apart from the fills)
   const AGES = [
     { label: "This week", color: "#184f95" },
-    { label: "Last week", color: "#3987e5" },
-    { label: "2 weeks ago", color: "#86b6ef" },
-    { label: "3 weeks ago", color: "#cde2fb" },
+    { label: "1 wk ago", color: "#3987e5" },
+    { label: "2 wk ago", color: "#86b6ef" },
+    { label: "3 wk ago", color: "#cde2fb" },
   ];
-  const WITHIN = ["this week", "within 2 weeks", "within 3 weeks", "within 4 weeks"];
-  try { const m = localStorage.getItem("covidnl.mapmode"); if (MODES[m]) mapState.mode = m; } catch (e) {}
+  try {
+    const m = localStorage.getItem("covidnl.mapmode"); if (MODES[m]) mapState.mode = m;
+    const l = localStorage.getItem("covidnl.maplayer"); if (l === "provinces" || l === "catchments") mapState.layer = l;
+  } catch (e) {}
+
+  // least-squares slope of ln(value) over the 4 weeks up to wi, as % change per week; needs 3+ positive values
+  function trend(get, wi){
+    const xs = [], ys = [];
+    for (let j = wi - 3; j <= wi; j++) { const v = j >= 0 ? get(j) : null; if (v > 0) { xs.push(j); ys.push(Math.log(v)); } }
+    if (xs.length < 3) return null;
+    const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
+    let sxy = 0, sxx = 0;
+    xs.forEach((x, k) => { sxy += (x - mx) * (ys[k] - my); sxx += (x - mx) ** 2; });
+    return (Math.exp(sxy / sxx) - 1) * 100;
+  }
+  const ageAt = (code, wi) => { const lw = mapState.lastWeek.get(code); return lw && lw[wi] >= 0 ? wi - lw[wi] : Infinity; };
+  // a catchment area shows its station's latest value if that is at most 3 weeks old
+  function stationLevel(code, wi){
+    const age = ageAt(code, wi), vals = mapState.stationVal.get(code);
+    return age < AGES.length && vals ? vals[wi - age] : null;
+  }
+  function stationGrowth(code, wi){
+    const vals = mapState.stationVal.get(code);
+    return vals ? trend((j) => (Number.isNaN(vals[j]) ? null : vals[j]), wi) : null;
+  }
 
   function buildMap(){
     if (!GEO || !state.plants) return;
     const P = GEO.provinces.length;
-    // mean per plant per week, then weighted by the residents each plant serves in each province
+    // mean per station per week, then weighted by the people each station serves in each province
     let first = Infinity, last = -Infinity;
     const plantWeek = new Map();
     for (const [code, p] of state.plants) {
@@ -759,87 +820,95 @@
       }
     }
     const W = Math.round((last - first) / WEEK) + 1;
-    const num = [], den = [], cnt = [];
-    for (let i = 0; i < P; i++) { num.push(new Float64Array(W)); den.push(new Float64Array(W)); cnt.push(new Uint16Array(W)); }
+    const num = [], den = [];
+    for (let i = 0; i < P; i++) { num.push(new Float64Array(W)); den.push(new Float64Array(W)); }
     for (const a of plantWeek.values()) {
       const wi = Math.round((a.w - first) / WEEK), v = a.s / a.n;
-      for (const [pv, pop] of GEO.plants[a.code]) { num[pv][wi] += v * pop; den[pv][wi] += pop; cnt[pv][wi]++; }
+      if (!mapState.stationVal.has(a.code)) mapState.stationVal.set(a.code, new Float64Array(W).fill(NaN));
+      mapState.stationVal.get(a.code)[wi] = v;
+      for (const [pv, pop] of GEO.plants[a.code]) { num[pv][wi] += v * pop; den[pv][wi] += pop; }
     }
     mapState.weeks = Array.from({ length: W }, (_, i) => first + i * WEEK);
     mapState.level = num.map((n, pv) => Array.from(n, (s, wi) => den[pv][wi] > 0 ? s / den[pv][wi] : null));
-    mapState.nplants = cnt;
+    mapState.growth = mapState.level.map(lv => lv.map((_, wi) => trend((j) => lv[j], wi)));
     // per station: for every week, the latest week up to then with a measurement (-1 if none yet)
-    const measuredIn = new Map();
-    for (const a of plantWeek.values()) {
-      if (!measuredIn.has(a.code)) measuredIn.set(a.code, new Uint8Array(W));
-      measuredIn.get(a.code)[Math.round((a.w - first) / WEEK)] = 1;
-    }
     for (const [code, p] of state.plants) {
       if (!GEO.stations[code] && !GEO.plants[code]) continue;
-      // stations outside the CBS table still get a dot, so collect their weeks too
-      let m = measuredIn.get(code);
-      if (!m) {
-        m = new Uint8Array(W);
-        for (const q of p.pts) { const wi = Math.round((mondayOf(q.t) - first) / WEEK); if (wi >= 0 && wi < W) m[wi] = 1; }
-      }
-      const lw = new Int16Array(W); let last = -1;
-      for (let wi = 0; wi < W; wi++) { if (m[wi]) last = wi; lw[wi] = last; }
+      const m = new Uint8Array(W);
+      for (const q of p.pts) { const wi = Math.round((mondayOf(q.t) - first) / WEEK); if (wi >= 0 && wi < W) m[wi] = 1; }
+      const lw = new Int16Array(W); let prev = -1;
+      for (let wi = 0; wi < W; wi++) { if (m[wi]) prev = wi; lw[wi] = prev; }
       mapState.lastWeek.set(code, lw);
     }
-    // stations per province: each station counts toward the province it mainly serves
+    // station counts: each station belongs to the province it mainly serves
     const stationsOf = Array.from({ length: P }, () => []);
+    mapState.provinceOf = new Map();
     for (const [code, list] of Object.entries(GEO.plants)) {
       const main = list.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
-      stationsOf[main].push(code);
+      stationsOf[main].push(code); mapState.provinceOf.set(code, main);
     }
     mapState.stationsTotal = stationsOf.map(s => s.length);
-    // updated[pv][wi] = counts of stations with a measurement within 1, 2, 3 and 4 weeks
+    // updated[pv][wi] = stations with a measurement within 1, 2, 3 and 4 weeks
     mapState.updated = stationsOf.map(codes => Array.from({ length: W }, (_, wi) => {
       const c = [0, 0, 0, 0];
-      for (const code of codes) {
-        const lw = mapState.lastWeek.get(code);
-        const age = lw && lw[wi] >= 0 ? wi - lw[wi] : Infinity;
-        for (let k = 0; k < 4; k++) if (age <= k) c[k]++;
-      }
+      for (const code of codes) { const age = ageAt(code, wi); for (let k = 0; k < 4; k++) if (age <= k) c[k]++; }
       return c;
-    }));
-    // growth: least-squares slope of ln(level) over the trailing 4 weeks, needing 3 or more positive levels
-    mapState.growth = mapState.level.map(lv => lv.map((_, wi) => {
-      const xs = [], ys = [];
-      for (let j = wi - 3; j <= wi; j++) if (j >= 0 && lv[j] > 0) { xs.push(j); ys.push(Math.log(lv[j])); }
-      if (xs.length < 3) return null;
-      const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
-      let sxy = 0, sxx = 0;
-      xs.forEach((x, k) => { sxy += (x - mx) * (ys[k] - my); sxx += (x - mx) ** 2; });
-      return (Math.exp(sxy / sxx) - 1) * 100;
     }));
     mapState.built = true;
     if (mapState.week < 0) mapState.week = W - 1;
-    const range = document.getElementById("mapweek");
-    range.max = String(W - 1); range.value = String(mapState.week);
     document.querySelector("#c-map [data-timeline]").hidden = false;
+    syncMapRange();
   }
 
-  function drawMap(){
-    const card = document.getElementById("c-map");
-    const mode = MODES[mapState.mode];
-    for (const b of document.querySelectorAll("#mapmode button")) b.setAttribute("aria-pressed", String(b.dataset.mode === mapState.mode));
-    const scale = card.querySelector("[data-scale]");
+  // the page's time range also limits the slider
+  function syncMapRange(){
+    if (!mapState.built) return;
+    const c = cutoff(), from = c === -Infinity ? 0 : Math.max(0, mapState.weeks.findIndex(t => t >= mondayOf(c)));
+    const range = document.getElementById("mapweek");
+    range.min = String(from); range.max = String(mapState.weeks.length - 1);
+    mapState.week = Math.max(from, mapState.week);
+    range.value = String(mapState.week);
+  }
+  const minWeek = () => +document.getElementById("mapweek").min;
+
+  function drawLegend(){
+    const key = mapState.mode;
+    if (mapState.legendKey === key) return;
+    mapState.legendKey = key;
+    const mode = MODES[mapState.mode], scale = document.querySelector("#c-map [data-scale]");
     scale.replaceChildren();
-    scale.append(Object.assign(document.createElement("div"), { textContent: mode.caption }));
+    scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: mode.caption }));
     const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = rampCss(); scale.appendChild(bar);
     const ticks = document.createElement("div"); ticks.className = "ticks";
     for (const t of mode.ticks) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: t }));
     scale.appendChild(ticks);
-    const nd = document.createElement("div"); nd.className = "nd"; nd.append(document.createElement("i"), document.createTextNode("No measurements"));
-    scale.appendChild(nd);
-    scale.appendChild(Object.assign(document.createElement("div"), { className: "dots-head", textContent: "Sewage station, last updated" }));
-    for (const a of [...AGES, { label: "Longer ago", old: true }]) {
-      const row = document.createElement("div"); row.className = "nd";
-      const i = document.createElement("i"); i.className = "dot" + (a.old ? " old" : "");
-      if (!a.old) i.style.background = a.color;
-      row.append(i, document.createTextNode(a.label)); scale.appendChild(row);
+    scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: "Station last updated", style: "margin-top:10px" }));
+    const keys = document.createElement("div"); keys.className = "keys";
+    for (const a of [...AGES, { label: "Older", old: true }, { label: "No data", sq: true }]) {
+      const s = document.createElement("span"), i = document.createElement("i");
+      i.className = a.sq ? "sq" : "dot" + (a.old ? " old" : "");
+      if (a.color) i.style.background = a.color;
+      s.append(i, document.createTextNode(a.label)); keys.appendChild(s);
     }
+    scale.appendChild(keys);
+  }
+
+  function drawStats(rows){
+    const t = document.querySelector("#c-map [data-stats]");
+    t.replaceChildren();
+    for (const [k, v] of rows) {
+      const tr = t.insertRow(), th = document.createElement("th");
+      th.textContent = k; tr.appendChild(th);
+      const td = tr.insertCell(); td.textContent = v; td.title = v;
+    }
+  }
+
+  function drawMap(){
+    const card = document.getElementById("c-map");
+    const mode = MODES[mapState.mode], catchMode = mapState.layer === "catchments";
+    for (const b of document.querySelectorAll("#mapmode button")) b.setAttribute("aria-pressed", String(b.dataset.mode === mapState.mode));
+    for (const b of document.querySelectorAll("#maplayer button")) b.setAttribute("aria-pressed", String(b.dataset.layer === mapState.layer));
+    drawLegend();
     if (!mapState.built) return;
 
     const box = card.querySelector("[data-map]");
@@ -847,7 +916,8 @@
     let svg = box.querySelector("svg");
     const R = GEO.w / 150;
     if (!svg) {
-      svg = el("svg", { viewBox: `-4 -4 ${GEO.w + 8} ${GEO.h + 8}`, role: "group", "aria-label": "Map of Dutch provinces with sewage stations" }, null);
+      svg = el("svg", { viewBox: `-4 -4 ${GEO.w + 8} ${GEO.h + 8}`, role: "group", "aria-label": "Map of sewage virus by region" }, null);
+      el("g", { class: "catch" }, svg);
       GEO.provinces.forEach((p, i) => {
         const path = el("path", { d: p.d, class: "pv", tabindex: 0, "data-i": i }, svg);
         path.addEventListener("pointerenter", () => mapTip(i));
@@ -870,12 +940,29 @@
       });
       box.appendChild(svg);
     }
+    // catchment areas arrive in a separate file; add them once they are there
+    const cg = svg.querySelector("g.catch");
+    if (!cg.childNodes.length && window.COVID_CATCHMENTS) {
+      for (const [code, d] of Object.entries(window.COVID_CATCHMENTS)) {
+        const path = el("path", { d, class: "ca", "data-code": code }, cg);
+        path.addEventListener("pointerenter", () => stationTip(code));
+        path.addEventListener("pointerleave", hideMapTip);
+      }
+    }
+    svg.classList.toggle("catch-mode", catchMode);
+    cg.setAttribute("visibility", catchMode ? "visible" : "hidden");
+
     const wi = mapState.week;
+    const pvValue = (i) => (mapState.mode === "growth" ? mapState.growth[i][wi] : mapState.level[i][wi]);
+    const stValue = (code) => (mapState.mode === "growth" ? stationGrowth(code, wi) : stationLevel(code, wi));
     for (const path of svg.querySelectorAll("path.pv")) {
-      const i = +path.dataset.i, v = mode.value(i, wi), u = mapState.updated[i][wi];
+      const i = +path.dataset.i, v = pvValue(i), u = mapState.updated[i][wi];
       path.setAttribute("fill", v == null ? css("--nodata") : mode.color(v));
-      path.setAttribute("aria-label", GEO.provinces[i].name + ": " + (v == null ? "no measurements" : mode.fmt(v)) +
-        ", " + u[0] + " of " + mapState.stationsTotal[i] + " sewage stations updated this week");
+      path.setAttribute("aria-label", GEO.provinces[i].name + ": " + (v == null ? "no data" : mode.fmt(v)) + ", " + u[0] + " of " + mapState.stationsTotal[i] + " stations updated this week");
+    }
+    if (catchMode) for (const path of cg.childNodes) {
+      const v = stValue(path.dataset.code);
+      path.setAttribute("fill", v == null ? css("--nodata") : mode.color(v));
     }
     for (const c of svg.querySelectorAll("circle.st")) {
       const lw = mapState.lastWeek.get(c.dataset.code)[wi];
@@ -891,65 +978,77 @@
         c.setAttribute("stroke", "#8b8a84"); c.setAttribute("stroke-width", R * 0.35);
       }
     }
-    // draw recently updated stations last, so they sit on top where dots overlap
+    // recently updated stations on top where dots overlap
     const g = svg.querySelector("g.stations");
     for (const c of [...g.children].sort((a, b) => (+b.dataset.age || 0) - (+a.dataset.age || 0))) g.appendChild(c);
 
-    document.getElementById("mapweeklabel").textContent = "Week of " + fmtDate(mapState.weeks[wi]);
+    document.getElementById("mapweeklabel").textContent = fmtDate(mapState.weeks[wi]);
     document.getElementById("mapweek").value = String(wi);
 
-    // side panel: provinces rising, the fastest, and stations updated nationally
-    const info = card.querySelector("[data-weekinfo]");
-    const gs = GEO.provinces.map((p, i) => ({ name: p.name, g: mapState.growth[i][wi], lv: mapState.level[i][wi], u: mapState.updated[i][wi], N: mapState.stationsTotal[i] }));
-    const rising = gs.filter(x => x.g != null && x.g > 0).length, known = gs.filter(x => x.g != null).length;
-    const top = gs.filter(x => x.g != null).sort((a, b) => b.g - a.g)[0];
-    info.replaceChildren();
-    const b = document.createElement("b"); b.textContent = known ? rising + " of " + known + " provinces rising" : "Not enough data"; info.appendChild(b);
-    if (top && top.g > 0) {
-      info.appendChild(Object.assign(document.createElement("div"), {
-        textContent: "Fastest: " + top.name + ", " + MODES.growth.fmt(top.g) + " (" + top.u[0] + " of " + top.N + " stations updated this week)" }));
+    // fixed rows, so nothing reflows while the slider moves
+    const N = mapState.stationsTotal.reduce((a, b) => a + b, 0);
+    const upd = [0, 1, 2, 3].map(k => mapState.updated.reduce((s, u) => s + u[wi][k], 0));
+    let items;
+    if (catchMode) {
+      items = Object.keys(window.COVID_CATCHMENTS || {}).map(code => ({ code, name: state.plants.get(code)?.name || code, g: stationGrowth(code, wi), lv: stationLevel(code, wi), age: ageAt(code, wi) }));
+    } else {
+      items = GEO.provinces.map((p, i) => ({ name: p.name, g: mapState.growth[i][wi], lv: mapState.level[i][wi], u: mapState.updated[i][wi], N: mapState.stationsTotal[i] }));
     }
-    const tot = gs.reduce((s, x) => s + x.N, 0), upd = [0, 1, 2, 3].map(k => gs.reduce((s, x) => s + x.u[k], 0));
-    info.appendChild(Object.assign(document.createElement("div"), {
-      textContent: "Sewage stations updated: " + upd[0] + " this week, " + upd[1] + " within 2 weeks, " + upd[3] + " within 4 weeks, of " + tot }));
+    const known = items.filter(x => x.g != null), top = known.slice().sort((a, b) => b.g - a.g)[0];
+    drawStats([
+      ["Rising", known.length ? known.filter(x => x.g > 0).length + " / " + known.length + (catchMode ? " areas" : " provinces") : "–"],
+      ["Fastest", top && top.g > 0 ? top.name + " " + pctFmtSigned(top.g) : "–"],
+      ["Updated", upd[0] + " / " + N + " stations"],
+      ["≤ 2 weeks", upd[1] + " / " + N],
+      ["≤ 3 weeks", upd[2] + " / " + N],
+      ["≤ 4 weeks", upd[3] + " / " + N],
+    ]);
 
-    renderTable(card.querySelector("[data-table]"), ["Province", "Growth / week", "Level × 10¹¹", "Stations", "Updated this week", "≤ 2 weeks", "≤ 3 weeks", "≤ 4 weeks"],
-      gs.slice().sort((a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity)).map(x => [x.name, x.g == null ? "–" : MODES.growth.fmt(x.g).replace(" per week", ""),
-        x.lv == null ? "–" : sewageFmt(x.lv), String(x.N), ...x.u.map(String)]));
+    const byGrowth = (a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity);
+    if (catchMode) {
+      renderTable(card.querySelector("[data-table]"), ["Station", "Growth / week", "Level × 10¹¹", "Last update"],
+        items.sort(byGrowth).map(x => [x.name, x.g == null ? "–" : pctFmtSigned(x.g), x.lv == null ? "–" : sewageFmt(x.lv),
+          x.age === Infinity ? "–" : x.age === 0 ? "this week" : x.age + " wk ago"]));
+    } else {
+      renderTable(card.querySelector("[data-table]"), ["Province", "Growth / week", "Level × 10¹¹", "Stations", "Updated", "≤ 2 wk", "≤ 3 wk", "≤ 4 wk"],
+        items.sort(byGrowth).map(x => [x.name, x.g == null ? "–" : pctFmtSigned(x.g), x.lv == null ? "–" : sewageFmt(x.lv), String(x.N), ...x.u.map(String)]));
+    }
   }
 
   function mapTip(i){
     const box = document.querySelector("#c-map [data-map]"), tip = tipFor(box), wi = mapState.week;
     const g = mapState.growth[i][wi], lv = mapState.level[i][wi], u = mapState.updated[i][wi], N = mapState.stationsTotal[i];
-    tipRows(tip, GEO.provinces[i].name + " · week of " + fmtDate(mapState.weeks[wi]), [
+    tipRows(tip, GEO.provinces[i].name + " · " + fmtDate(mapState.weeks[wi]), [
       { color: g == null ? css("--nodata") : MODES.growth.color(g), value: g == null ? "–" : MODES.growth.fmt(g), name: "" },
-      { color: lv == null ? css("--nodata") : MODES.level.color(lv), value: lv == null ? "no measurements" : MODES.level.fmt(lv), name: "" },
-      ...u.map((n, k) => ({ color: k < AGES.length ? AGES[k].color : "transparent", value: n + " of " + N, name: "stations updated " + WITHIN[k] })),
+      { color: lv == null ? css("--nodata") : MODES.level.color(lv), value: lv == null ? "no data" : MODES.level.fmt(lv), name: "" },
+      ...u.map((n, k) => ({ color: AGES[k].color, value: n + " / " + N, name: k ? "stations ≤ " + (k + 1) + " wk" : "stations this week" })),
     ]);
     const svg = box.querySelector("svg"), p = GEO.provinces[i], s = svg.clientWidth / (GEO.w + 8);
     placeTip(box, tip, (p.lx + 4) * s, (p.ly + 4) * s);
   }
   function stationTip(code){
     const box = document.querySelector("#c-map [data-map]"), tip = tipFor(box), wi = mapState.week;
-    const p = state.plants.get(code), end = mapState.weeks[wi] + 7 * DAY;
+    const p = state.plants.get(code);
+    if (!p) return;
+    const end = mapState.weeks[wi] + WEEK, age = ageAt(code, wi), g = stationGrowth(code, wi);
     let q = null;
     for (const x of p.pts) { if (x.t < end) q = x; else break; }
-    const age = wi - mapState.lastWeek.get(code)[wi];
-    tipRows(tip, p.name + " sewage station", [
-      { color: age < AGES.length ? AGES[age].color : "#8b8a84", value: q ? fmtDate(q.t) : "–", name: "last measurement" },
-      { color: "transparent", value: q ? sewageFmt(q.v) + " × 10¹¹" : "–", name: "" },
+    tipRows(tip, p.name, [
+      { color: g == null ? css("--nodata") : MODES.growth.color(g), value: g == null ? "–" : MODES.growth.fmt(g), name: "" },
+      { color: q ? MODES.level.color(q.v) : css("--nodata"), value: q ? MODES.level.fmt(q.v) : "–", name: "" },
+      { color: age < AGES.length ? AGES[age].color : "#8b8a84", value: q ? fmtDate(q.t) : "–", name: "last measured" },
     ]);
-    const xy = GEO.stations[code], s = box.querySelector("svg").clientWidth / (GEO.w + 8);
+    const xy = GEO.stations[code] || [0, 0], s = box.querySelector("svg").clientWidth / (GEO.w + 8);
     placeTip(box, tip, (xy[0] + 4) * s, (xy[1] + 4) * s);
   }
   function hideMapTip(){ const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none"; }
 
-  function setWeek(wi){ mapState.week = Math.max(0, Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
+  function setWeek(wi){ mapState.week = Math.max(minWeek(), Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
   function stopPlay(){ clearInterval(mapState.timer); mapState.timer = null; const b = document.getElementById("mapplay"); b.textContent = "▶"; b.setAttribute("aria-label", "Play"); }
   document.getElementById("mapweek").addEventListener("input", (e) => { stopPlay(); setWeek(+e.target.value); });
   document.getElementById("mapplay").addEventListener("click", () => {
     if (mapState.timer) return stopPlay();
-    if (mapState.week >= mapState.weeks.length - 1) setWeek(0);
+    if (mapState.week >= mapState.weeks.length - 1) setWeek(minWeek());
     const b = document.getElementById("mapplay"); b.textContent = "❚❚"; b.setAttribute("aria-label", "Pause");
     mapState.timer = setInterval(() => { if (mapState.week >= mapState.weeks.length - 1) return stopPlay(); setWeek(mapState.week + 1); }, 180);
   });
@@ -959,6 +1058,23 @@
     try { localStorage.setItem("covidnl.mapmode", mapState.mode); } catch (err) {}
     drawMap();
   });
+  document.getElementById("maplayer").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    mapState.layer = b.dataset.layer;
+    try { localStorage.setItem("covidnl.maplayer", mapState.layer); } catch (err) {}
+    hideMapTip(); drawMap();
+  });
+
+  // catchment shapes (≈ 90 KB) load with the station data, from a file next to this page
+  function loadCatchments(){
+    if (window.COVID_CATCHMENTS) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "covid-nl-catchments.js";
+      s.onload = resolve; s.onerror = () => reject(new Error("catchment areas"));
+      document.head.appendChild(s);
+    });
+  }
 
   // ---------- plants ----------
   let plantsPromise = null;
@@ -998,6 +1114,7 @@
       sel.hidden = false;
       drawPlant();
       buildMap(); drawMap();
+      loadCatchments().then(drawMap, () => {});
     } catch (e) {
       plantsPromise = null;
       for (const b of btns) { b.disabled = false; b.textContent = "Retry loading per-plant data"; }
@@ -1022,6 +1139,7 @@
     state.months = +b.dataset.m; syncRange();
     try { localStorage.setItem("covidnl.months", String(state.months)); } catch (err) {}
     drawAll();
+    syncMapRange(); drawMap();
   });
   syncRange();
   let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 150); });
