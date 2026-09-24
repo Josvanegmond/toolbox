@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Hospita Kamerprijs Rekentool</title>
+<link rel="stylesheet" href="shared/toolbox.css">
 <style>
   :root{
     --ground:#ffffff;
@@ -106,6 +107,8 @@
     border-bottom:1px solid var(--line);
   }
   header.top .titleblock{ display:flex; flex-direction:column; gap:6px; max-width:66ch; }
+  header.top .eyebrow a{ color:inherit; text-decoration:none; }
+  header.top .eyebrow a:hover{ color:var(--accent); }
   header.top .eyebrow{
     font-size:12px;
     letter-spacing:0.08em;
@@ -116,19 +119,6 @@
   header.top p{ margin:4px 0 0; color:var(--muted); font-size:15px;}
   header.top .lastupdated{ font-size:12px; color:var(--muted); }
   header.top .lastupdated b{ color:var(--ink); }
-  .langtoggle{
-    display:inline-flex;
-    border:1px solid var(--line);
-    border-radius:999px;
-    overflow:hidden;
-    background:var(--surface);
-  }
-  .langtoggle button{
-    font:inherit; font-size:12.5px; font-weight:700; letter-spacing:0.02em;
-    border:none; background:transparent; color:var(--muted);
-    padding:7px 14px; cursor:pointer;
-  }
-  .langtoggle button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
   .helpbtn{
     font:inherit; font-size:12.5px; font-weight:700;
     border:1px solid var(--line); border-radius:999px;
@@ -137,14 +127,6 @@
     display:inline-flex; align-items:center; gap:6px;
   }
   .helpbtn:hover{ border-color:var(--accent); color:var(--accent); }
-  .themebtn{
-    font:inherit; font-size:15px; line-height:1;
-    border:1px solid var(--line); border-radius:999px;
-    background:var(--surface); color:var(--ink);
-    width:32px; height:32px; padding:0; cursor:pointer;
-    display:inline-flex; align-items:center; justify-content:center;
-  }
-  .themebtn:hover{ border-color:var(--accent); color:var(--accent); }
 
   .h2title{ display:inline-flex; align-items:center; gap:7px; }
   .infobtn{
@@ -163,21 +145,6 @@
   }
   #tipPopover[hidden]{ display:none; }
 
-  .disclaimer{
-    display:flex; gap:12px; align-items:flex-start;
-    background:var(--warn-soft);
-    border:1px solid var(--warn);
-    border-radius:12px;
-    padding:14px 16px;
-    margin-bottom:20px;
-    font-size:13.5px;
-  }
-  .disclaimer .mark{
-    font-weight:800; color:var(--warn); font-size:15px; line-height:1;
-    flex:none;
-  }
-  .disclaimer b{ color:var(--warn); }
-  .disclaimer a{ color:var(--warn); text-decoration:underline; }
 
   .layout{
     display:grid;
@@ -376,32 +343,6 @@
   .lawcard dt{ color:var(--muted); font-weight:600; }
   .lawcard dd{ margin:0; }
 
-  dialog#sourcesModal{
-    max-width: 620px;
-    width: calc(100% - 40px);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:0;
-    background:var(--surface);
-    color:var(--ink);
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.4);
-  }
-  dialog#sourcesModal::backdrop{ background:rgba(10,14,10,0.55); }
-  .modal-inner{ padding:24px 26px 22px; max-height:80vh; overflow-y:auto; }
-  .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
-  .modal-head h2{ font-size:20px; }
-  .modal-close{
-    font:inherit; font-size:13px; font-weight:700;
-    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
-    border-radius:8px; padding:5px 10px; cursor:pointer; flex:none;
-  }
-  .modal-close:hover{ border-color:var(--accent); color:var(--accent); }
-  .srclist{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
-  .srclist li{ font-size:13.5px; padding-bottom:12px; border-bottom:1px solid var(--line); }
-  .srclist li:last-child{ border-bottom:none; padding-bottom:0; }
-  .srclist .srctitle{ font-weight:700; display:block; margin-bottom:2px; }
-  .srclist .srcnote{ color:var(--muted); font-size:12.5px; }
-  .modal-section-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:18px 0 4px; }
 </style>
 </head>
 <body>
@@ -425,7 +366,7 @@
 <div class="wrap">
   <header class="top">
     <div class="titleblock">
-      <span class="eyebrow" data-i18n="eyebrow">Woningwaarderingsstelsel onzelfstandige woonruimte (WWSO)</span>
+      <span class="eyebrow"><a href="../index.html">Toolbox</a> · <span data-i18n="eyebrow">Woningwaarderingsstelsel onzelfstandige woonruimte (WWSO)</span></span>
       <h1 data-i18n="h1">Wat mag u vragen voor uw kamer?</h1>
       <p data-i18n="intro">Bereken de wettelijke maximale kale huur voor een kamer in uw huis, met dezelfde puntentelling als de Huurcommissie.</p>
       <p class="lastupdated" data-i18n-html="lastupdated">Laatst gecontroleerd tegen de officiële bronnen: <b>30 augustus 2026</b>. Wetgeving kan sindsdien gewijzigd zijn.</p>
@@ -789,7 +730,7 @@
 
 <div id="tipPopover" role="tooltip" hidden></div>
 
-<dialog id="sourcesModal">
+<dialog id="sourcesModal" class="tbmodal">
   <div class="modal-inner">
     <div class="modal-head">
       <h2 data-i18n="modal_title">Bronnen &amp; hulp</h2>
@@ -837,6 +778,7 @@
     <p style="font-size:13px; color:var(--muted); margin:4px 0 0" data-i18n="modal_limits_text">Woonvoorzieningen voor mensen met een handicap (rubriek 7) en de +35%-opslag voor zorgwoningen (rubriek 12) zijn niet verwerkt. Enkele nuances bij gedeelde wastafels in een vertrek (in plaats van de badkamer) zijn vereenvoudigd. Bij twijfel: gebruik de officiële rekenmodule of vraag de Huurcommissie om een uitspraak.</p>
   </div>
 </dialog>
+<script src="shared/toolbox.js"></script>
 <script>
 (function(){
   var PRICE = [0.00,10.33,20.56,30.77,40.89,51.12,61.29,71.47,81.62,91.85,102.06,112.23,122.38,132.57,142.76,152.92,163.13,173.33,183.54,193.63,203.87,214.04,224.29,234.44,244.59,254.83,264.95,275.10,285.37,295.54,305.73,315.89,326.12,336.29,346.45,356.69,366.90,377.02,387.18,397.42,407.58,417.73,427.95,438.17,448.30,458.46,468.73,478.86,489.09,499.27,509.44,519.58,529.80,539.99,550.19,560.36,570.54,580.70,590.95,601.06,611.28,616.58,621.84,627.09,632.41,637.63,642.97,648.24,653.44,658.79,664.02,669.35,674.58,679.91,685.17,690.38,695.67,700.94,706.23,711.49,716.80,722.09,727.34,732.60,737.95,743.13,748.46,753.67,759.00,764.30,769.54,774.81,780.09,785.36,790.62,795.90,801.20,806.50,811.77,817.05,822.35,827.56,832.87,838.13,843.38,848.66,853.95,859.20,864.55,869.74,875.11,880.31,885.60,890.88,896.12,901.43,906.72,911.93,917.25,922.50,927.76,933.11,938.38,943.66,948.93,954.22,959.49,964.72,970.03,975.32,980.64,985.86,991.17,996.41,1001.61,1006.93,1012.22,1017.52,1022.77,1028.04,1033.34,1038.58,1043.83,1049.18,1054.44,1059.71,1065.00,1070.25,1075.55,1080.84,1086.10,1091.41,1096.66,1101.93,1107.14,1112.46,1117.68,1123.03,1128.27,1133.60,1138.85,1144.08,1149.44,1154.61,1159.96,1165.22,1170.50,1175.77,1181.04,1186.30,1191.57,1196.87,1202.15,1207.42,1212.67,1218.02,1223.21,1228.53,1233.79,1239.07,1244.30,1249.58,1254.86,1260.15,1265.46,1270.72,1276.03,1281.26,1286.57,1291.84,1297.08,1302.39,1307.68,1312.98,1318.21,1323.50,1328.72,1333.99,1339.27,1344.59,1349.82,1355.13,1360.38,1365.67,1370.97,1376.23,1381.49,1386.79,1392.08,1397.33,1402.63,1407.88,1413.16,1418.45,1423.75,1429.01,1434.29,1439.55,1444.84,1450.10,1455.36,1460.63,1465.91,1471.19,1476.46,1481.71,1487.01,1492.30,1497.54,1502.84,1508.14,1513.44,1518.70,1523.90,1529.25,1534.49,1539.78,1545.06,1550.33,1555.59,1560.88,1566.15,1571.42,1576.76,1581.95,1587.27,1592.52,1597.81,1603.11,1608.36,1613.63];
@@ -1240,45 +1182,16 @@
     });
   }
 
-  function applyLang(lang){
+  // shared/toolbox.js swaps the translated texts; this tool re-renders its own parts
+  function onLangChange(lang){
     currentLang = lang;
-    if (typeof closeTip === 'function') closeTip();
-    var dict = I18N[lang];
-    document.querySelectorAll('[data-i18n]').forEach(function(el){
-      var key = el.getAttribute('data-i18n');
-      if (dict[key] !== undefined) el.textContent = dict[key];
-    });
-    document.querySelectorAll('[data-i18n-html]').forEach(function(el){
-      var key = el.getAttribute('data-i18n-html');
-      if (dict[key] !== undefined) el.innerHTML = dict[key];
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el){
-      var key = el.getAttribute('data-i18n-placeholder');
-      if (dict[key] !== undefined) el.setAttribute('placeholder', dict[key]);
-    });
-    document.querySelectorAll('[data-lang-btn]').forEach(function(btn){
-      btn.setAttribute('aria-pressed', btn.getAttribute('data-lang-btn') === lang ? 'true' : 'false');
-    });
+    closeTip();
     refreshRegioLabels();
     compute();
   }
 
-  document.querySelectorAll('[data-lang-btn]').forEach(function(btn){
-    btn.addEventListener('click', function(){ applyLang(btn.getAttribute('data-lang-btn')); });
-  });
-
-  var explicitTheme = 'light';
-  document.documentElement.setAttribute('data-theme', 'light');
-  var mql = window.matchMedia('(prefers-color-scheme: dark)');
-  var themeBtn = document.getElementById('themeToggle');
-  function effectiveTheme(){ return explicitTheme || (mql.matches ? 'dark' : 'light'); }
-  function renderThemeIcon(){ themeBtn.innerHTML = effectiveTheme() === 'dark' ? '&#9789;' : '&#9788;'; }
-  themeBtn.addEventListener('click', function(){
-    explicitTheme = effectiveTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', explicitTheme);
-    renderThemeIcon();
-  });
-  renderThemeIcon();
+  // light by default, as before; the viewer's choice is remembered
+  Toolbox.initTheme({ button: document.getElementById('themeToggle'), fallback: 'light' });
 
   var tipEl = document.getElementById('tipPopover');
   var currentTipBtn = null;
@@ -1504,7 +1417,7 @@
 
   document.addEventListener('input', compute);
   document.addEventListener('change', compute);
-  applyLang('nl');
+  Toolbox.initLang({ dict: I18N, fallback: 'nl', onChange: onLangChange });
 })();
 </script>
 </body>
