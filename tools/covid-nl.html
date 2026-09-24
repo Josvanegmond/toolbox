@@ -163,6 +163,10 @@
   }
   .btn{ cursor:pointer; font-weight:600; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   .btn:disabled{ opacity:.6; cursor:progress; }
+  .linkbtn{ font:inherit; font-size:13px; color:var(--accent); background:none; border:0; padding:4px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .linkbtn:hover{ color:var(--ink); }
+  .linkbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  .linkbtn:disabled{ color:var(--muted); text-decoration:none; cursor:progress; }
 
   .maptools{ display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin:2px 0 10px; }
   .mapwrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:12px 18px; }
@@ -191,6 +195,8 @@
   table.kv th{ font-weight:400; color:var(--muted); width:42%; }
   table.kv td{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
   .timeline{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .timeline[hidden]{ display:none; }
+  .map .empty{ min-height:240px; }
   .timeline input{ flex:1; min-width:0; accent-color:var(--accent); }
   .timeline output{ font-size:13px; font-weight:600; width:6.6em; flex:none; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .play{ font:inherit; font-size:13px; width:34px; height:34px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
@@ -252,11 +258,10 @@
           <button type="button" data-mode="growth" aria-pressed="true">Growth</button>
           <button type="button" data-mode="level" aria-pressed="false">Level</button>
         </div>
-        <button class="btn" type="button" id="maploadbtn" data-plantload>Load map data (≈ 10 MB)</button>
       </div>
       <div class="mapwrap">
         <div>
-          <div class="map" data-map><div class="empty">Map data loads on request.</div></div>
+          <div class="map" data-map><div class="empty"><button type="button" class="linkbtn" id="maploadbtn" data-plantload>Click here to load the dataset (≈ 10 MB)</button></div></div>
           <div class="timeline" data-timeline hidden>
             <button type="button" class="play" id="mapplay" aria-label="Play">▶</button>
             <input type="range" id="mapweek" min="0" max="0" value="0" aria-label="Week">
@@ -326,11 +331,10 @@
       <h2>Virus in sewage, per station</h2>
       <p class="sub">One station vs national</p>
       <div class="plantbar">
-        <button class="btn" type="button" id="plantload" data-plantload>Load station data (≈ 10 MB)</button>
         <select id="plantsel" hidden aria-label="Sewage station"></select>
       </div>
       <div class="legend" data-legend></div>
-      <div class="chart tall" data-chart><div class="empty">Station data loads on request.</div></div>
+      <div class="chart tall" data-chart><div class="empty"><button type="button" class="linkbtn" id="plantload" data-plantload>Click here to load the dataset (≈ 10 MB)</button></div></div>
       <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
         <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
@@ -1082,7 +1086,7 @@
   function loadPlants(){ return plantsPromise || (plantsPromise = fetchPlants()); }
   async function fetchPlants(){
     const btns = document.querySelectorAll("[data-plantload]"), sel = document.getElementById("plantsel");
-    for (const b of btns) { b.disabled = true; b.textContent = "Loading…"; }
+    for (const b of btns) { b.disabled = true; b.textContent = "Loading the dataset (≈ 10 MB)…"; }
     try {
       const rows = await load("plants");
       const map = new Map();
@@ -1118,11 +1122,8 @@
       loadCatchments().then(drawMap, () => {});
     } catch (e) {
       plantsPromise = null;
-      for (const b of btns) { b.disabled = false; b.textContent = "Retry loading per-plant data"; }
-      for (const id of ["c-plant", "c-map"]) {
-        const box = document.getElementById(id).querySelector(id === "c-map" ? "[data-map]" : "[data-chart]");
-        box.replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: "Could not load: " + e.message }));
-      }
+      // keep the link in place so the reader can try again
+      for (const b of btns) { b.disabled = false; b.textContent = "Could not load (" + e.message + "). Click to try again."; }
     }
   }
   for (const b of document.querySelectorAll("[data-plantload]")) b.addEventListener("click", loadPlants);
