@@ -19,6 +19,8 @@
     --accent-soft:#dff3f4;
     --warn:#b5490f;
     --warn-soft:#faeadf;
+    --bar-max:960px;
+    --bar-pad:16px;
     --shadow: 0 1px 2px rgba(10,13,14,0.04), 0 8px 24px -12px rgba(10,13,14,0.16);
     --grid:#e1e0d9;
     --axis:#c3c2b7;
@@ -97,12 +99,6 @@
   }
   header p{ margin:0; color:var(--muted); font-size:15px; max-width:64ch; }
 
-  .controls{
-    display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
-    margin:0 0 20px; position:sticky; top:0; z-index:5;
-    background:var(--ground); padding:10px 0;
-    border-bottom:1px solid var(--line);
-  }
   .seg{ display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--surface); }
   .seg button{
     font:inherit; font-size:13px; font-weight:600; color:var(--muted);
@@ -111,9 +107,7 @@
   .seg button:hover{ color:var(--ink); }
   .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
   .seg button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
-  .status{ font-size:12.5px; color:var(--muted); }
-  .controls .toolbar{ margin-left:auto; }
-  .status.err{ color:var(--warn); }
+  .pub.err{ color:var(--warn); }
 
   .grid{ display:grid; grid-template-columns:1fr; gap:16px; }
   @media (min-width:860px){ .grid.two{ grid-template-columns:1fr 1fr; } }
@@ -232,6 +226,25 @@
 </style>
 </head>
 <body>
+<div class="stickybar">
+  <div class="stickybar-inner">
+    <div class="seg" role="group" data-i18n-aria="range_aria" id="range">
+      <button type="button" data-m="3" data-i18n="r3">3 mo</button>
+      <button type="button" data-m="6" data-i18n="r6">6 mo</button>
+      <button type="button" data-m="12" data-i18n="r12">1 yr</button>
+      <button type="button" data-m="24" data-i18n="r24">2 yr</button>
+      <button type="button" data-m="0" data-i18n="rall">All</button>
+    </div>
+    <div class="toolbar">
+      <div class="langtoggle" role="group" aria-label="Taal / Language">
+        <button type="button" data-lang-btn="nl" aria-pressed="false">NL</button>
+        <button type="button" data-lang-btn="en" aria-pressed="false">EN</button>
+      </div>
+      <button type="button" class="helpbtn" data-open-about data-i18n="helpbtn">Bronnen &amp; hulp</button>
+      <button type="button" class="themebtn" id="themeToggle">&#9788;</button>
+    </div>
+  </div>
+</div>
 <div class="wrap">
   <header>
     <span class="eyebrow"><a href="../index.html">Toolbox</a> · <span data-i18n="eyebrow">RIVM open data</span></span>
@@ -244,23 +257,6 @@
     <div data-i18n-html="disclaimer"></div>
   </div>
 
-  <div class="controls">
-    <div class="seg" role="group" data-i18n-aria="range_aria" id="range">
-      <button type="button" data-m="3" data-i18n="r3">3 mo</button>
-      <button type="button" data-m="6" data-i18n="r6">6 mo</button>
-      <button type="button" data-m="12" data-i18n="r12">1 yr</button>
-      <button type="button" data-m="24" data-i18n="r24">2 yr</button>
-      <button type="button" data-m="0" data-i18n="rall">All</button>
-    </div>
-    <span class="status" id="status" role="status"></span>
-    <div class="toolbar">
-      <div class="langtoggle" role="group" aria-label="Taal / Language">
-        <button type="button" data-lang-btn="nl" aria-pressed="false">NL</button>
-        <button type="button" data-lang-btn="en" aria-pressed="false">EN</button>
-      </div>
-      <button type="button" class="themebtn" id="themeToggle">&#9788;</button>
-    </div>
-  </div>
 
   <div class="grid">
     <section class="card" id="c-sewage">
@@ -274,7 +270,7 @@
             <tr><td data-i18n="m_value"></td><td data-i18n="m_value_d"></td></tr>
             <tr><td data-i18n="m_sampling"></td><td data-i18n="m_sampling_nat"></td></tr>
           </tbody></table></div></details></span>
-        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM</a></span></div>
+        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="sewage"></span></span></div>
     </section>
 
     <section class="card" id="c-map">
@@ -286,8 +282,8 @@
           <button type="button" data-layer="catchments" aria-pressed="false" data-i18n="catchments"></button>
         </div>
         <div class="seg" role="group" data-i18n-aria="colour_aria" id="mapmode">
-          <button type="button" data-mode="growth" aria-pressed="true" data-i18n="growth"></button>
-          <button type="button" data-mode="level" aria-pressed="false" data-i18n="level"></button>
+          <button type="button" data-mode="level" aria-pressed="true" data-i18n="level"></button>
+          <button type="button" data-mode="growth" aria-pressed="false" data-i18n="growth"></button>
         </div>
       </div>
       <div class="mapwrap">
@@ -307,8 +303,8 @@
           <details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
           <details class="tbl stats"><summary data-i18n="stats">Stats</summary><div class="tblwrap"><table class="kv" data-stats></table></div></details>
           <details class="tbl method"><summary data-i18n="method">Method</summary><div class="tblwrap"><table><tbody>
-            <tr><td data-i18n="growth"></td><td data-i18n="m_growth_d"></td></tr>
             <tr><td data-i18n="level"></td><td data-i18n="m_level_d"></td></tr>
+            <tr><td data-i18n="growth"></td><td data-i18n="m_growth_d"></td></tr>
             <tr><td data-i18n="m_province"></td><td data-i18n="m_province_d"></td></tr>
             <tr><td data-i18n="m_catchment"></td><td data-i18n="m_catchment_d"></td></tr>
             <tr><td data-i18n="m_areacolour"></td><td data-i18n="m_areacolour_d"></td></tr>
@@ -317,7 +313,7 @@
             <tr><td data-i18n="m_latest"></td><td data-i18n="m_latest_d"></td></tr>
             <tr><td data-i18n="m_leftout"></td><td data-i18n="m_leftout_d"></td></tr>
           </tbody></table></div></details></span>
-        <span><span data-i18n="sources">Sources</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK</a>, <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">RWS</a></span></div>
+        <span><span data-i18n="sources">Sources</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK</a>, <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">RWS</a> <span class="pub" data-pub="plants"></span></span></div>
     </section>
 
     <section class="card" id="c-plant">
@@ -329,7 +325,7 @@
       <div class="legend" data-legend></div>
       <div class="chart tall" data-chart><div class="empty"><button type="button" class="linkbtn" id="plantload" data-plantload></button></div></div>
       <div class="foot"><details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
-        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a></span></div>
+        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="plants"></span></span></div>
     </section>
 
     <div class="grid two">
@@ -339,7 +335,7 @@
         <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
         <div class="chart" data-chart></div>
         <div class="foot"><details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
-          <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/0bae0312-6e26-41dc-a986-74a60e46c249" target="_blank" rel="noopener">RIVM</a></span></div>
+          <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/0bae0312-6e26-41dc-a986-74a60e46c249" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="pos"></span></span></div>
       </section>
 
       <section class="card" id="c-ari">
@@ -349,7 +345,7 @@
         <div class="legend" data-legend></div>
         <div class="chart" data-chart></div>
         <div class="foot"><details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
-          <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/05b0d961-77fc-4fb5-8c38-0d2df0b6143d" target="_blank" rel="noopener">RIVM</a></span></div>
+          <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/05b0d961-77fc-4fb5-8c38-0d2df0b6143d" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="ari"></span></span></div>
       </section>
     </div>
 
@@ -367,7 +363,7 @@
             <tr><td data-i18n="m_last2"></td><td data-i18n="m_last2_d"></td></tr>
             <tr><td data-i18n="m_samplesize"></td><td data-i18n="m_samplesize_d"></td></tr>
           </tbody></table></div></details></span>
-        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM</a></span></div>
+        <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="variants"></span></span></div>
     </section>
   </div>
 
@@ -469,8 +465,8 @@
       load_link: "Klik hier om de dataset te laden (≈ 10 MB)", loading: "De dataset wordt geladen (≈ 10 MB)…",
       load_failed: "Laden mislukt ({err}). Klik om het opnieuw te proberen.",
       no_data_range: "Geen gegevens in deze periode.",
-      status_loading: "RIVM-gegevens laden…", status_published: "RIVM-gegevens gepubliceerd op {date}",
-      status_failed: "Laden mislukt: {list}. De RIVM-server is mogelijk onbereikbaar; probeer het later opnieuw.",
+      helpbtn: "Bronnen & hulp", published: "gepubliceerd {date}",
+      load_error: "kon niet laden; de RIVM-server is mogelijk onbereikbaar",
       unit_sewage: "× 10¹¹ per 100.000 inwoners", national_avg: "Landelijk gemiddelde",
       aria_sewage: "Virus in rioolwater, landelijk gemiddelde", date: "Datum",
       week_of: "week van {date}", Week_of: "Week van {date}",
@@ -539,8 +535,8 @@
       load_link: "Click here to load the dataset (≈ 10 MB)", loading: "Loading the dataset (≈ 10 MB)…",
       load_failed: "Could not load ({err}). Click to try again.",
       no_data_range: "No data in this range.",
-      status_loading: "Loading RIVM data…", status_published: "RIVM data published {date}",
-      status_failed: "Could not load: {list}. RIVM's server may be down; try again later.",
+      helpbtn: "Sources & help", published: "published {date}",
+      load_error: "could not load; RIVM's server may be down",
       unit_sewage: "× 10¹¹ per 100,000 inhabitants", national_avg: "National average",
       aria_sewage: "Sewage virus load, national average", date: "Date",
       week_of: "week of {date}", Week_of: "Week of {date}",
@@ -619,7 +615,7 @@
   const pctFmt = (v) => f1.format(v) + "%";
 
   // ---------- state ----------
-  const state = { months: 12, data: {}, plants: null, plantCode: null };
+  const state = { months: 12, data: {}, plants: null, plantCode: null, pub: {}, failed: [] };
   try { const m = localStorage.getItem("covidnl.months"); if (m !== null) state.months = +m; } catch (e) {}
 
   function cutoff(){
@@ -990,32 +986,25 @@
       if (x <= p1) { const f = (x - p0) / (p1 - p0); return "rgb(" + c0.map((c, k) => Math.round(c + (c1[k] - c) * f)).join(",") + ")"; }
     }
   }
-  const rampCss = (ramp) => "linear-gradient(to right," + ramp.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
   const LEVEL_STEPS = 11;
   const levelStep = (v) => Math.max(0, Math.min(LEVEL_STEPS - 1, Math.floor(v / 1e11 / 100)));
-  // legend background: a smooth gradient, or hard-edged blocks for a stepped scale
-  function legendCss(mode){
-    const ramp = RAMPS[mapState.mode];
-    if (!mode.steps) return rampCss(ramp);
-    const w = 100 / mode.steps, stops = [];
-    for (let i = 0; i < mode.steps; i++) {
-      const c = rampColor(ramp, i / (mode.steps - 1));
-      stops.push(`${c} ${(i * w).toFixed(3)}%`, `${c} ${((i + 1) * w).toFixed(3)}%`);
-    }
-    return "linear-gradient(to right," + stops.join(",") + ")";
-  }
   const pctFmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "%";
   const MODES = {
     // growth: 0%/week or less is white, +25% orange, +50% or more red
-    growth: { color: (g) => rampColor(RAMPS.growth, g / 50), ticks: () => ["≤ 0%", "+25%", "≥ +50%"], caption: () => t("cap_growth"),
+    // growth: 7 steps of 10% per week: ≤ 0%, 0–10% … 40–50%, 50%+
+    growth: { steps: 7, stepOf: (g) => (g <= 0 ? 0 : Math.min(6, 1 + Math.floor(g / 10))),
+      stepLabel: (i) => (i === 0 ? "≤ 0%" : i === 6 ? "50%+" : (i - 1) * 10 + "–" + i * 10 + "%"),
+      color: (g) => rampColor(RAMPS.growth, MODES.growth.stepOf(g) / 6), caption: () => t("cap_growth"),
       fmt: (g) => pctFmtSigned(g) + " " + t("per_week") },
     // level: linear, see LEVEL_STEPS
     // level: 11 steps of 100 × 10¹¹ (0–100 … 900–1,000, then 1,000+), shaded along the same ramp
-    level: { steps: LEVEL_STEPS, color: (v) => rampColor(RAMPS.level, levelStep(v) / (LEVEL_STEPS - 1)),
+    level: { steps: LEVEL_STEPS, stepOf: (v) => levelStep(v),
+      stepLabel: (i) => (i === LEVEL_STEPS - 1 ? f0.format(i * 100) + "+" : f0.format(i * 100) + "–" + f0.format((i + 1) * 100)),
+      color: (v) => rampColor(RAMPS.level, levelStep(v) / (LEVEL_STEPS - 1)),
       caption: () => t("cap_level"),
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
-  const mapState = { mode: "growth", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
+  const mapState = { mode: "level", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
     lastWeek: new Map(), stationVal: new Map(), stationsTotal: [], updated: [], legendKey: "" };
   // station dots: shade by weeks since the station's latest measurement (blue, apart from the fills)
   const AGES = [
@@ -1118,7 +1107,7 @@
   const minWeek = () => +document.getElementById("mapweek").min;
 
   function drawLegend(){
-    const key = mapState.mode + "|" + (i18n ? i18n.lang : "");
+    const key = mapState.mode + "|" + (i18n ? i18n.lang : "") + "|" + (state.pub.plants || "");
     if (mapState.legendKey === key) return;
     mapState.legendKey = key;
     const mode = MODES[mapState.mode], scale = document.querySelector("#c-map [data-scale]");
@@ -1142,23 +1131,18 @@
     info.addEventListener("click", (e) => { e.stopPropagation(); pinned = !pinned; show(pinned); });
     document.addEventListener("click", (e) => { if (pinned && !pop.contains(e.target)) { pinned = false; show(false); } });
     info.addEventListener("keydown", (e) => { if (e.key === "Escape") { pinned = false; show(false); } });
-    if (mode.steps) {
+    {
       // one square per step with its range, like RIVM's own map legends
       const list = document.createElement("div"); list.className = "steplist";
       list.style.gridTemplateRows = `repeat(${Math.ceil(mode.steps / 2)}, auto)`;
       for (let i = 0; i < mode.steps; i++) {
         const row = document.createElement("span"), sq = document.createElement("i");
         sq.style.background = rampColor(RAMPS[mapState.mode], i / (mode.steps - 1));
-        const label = i === mode.steps - 1 ? f0.format(i * 100) + "+" : f0.format(i * 100) + "–" + f0.format((i + 1) * 100);
+        const label = mode.stepLabel(i);
         row.append(sq, document.createTextNode(label));
         list.appendChild(row);
       }
       scale.appendChild(list);
-    } else {
-      const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = legendCss(mode); scale.appendChild(bar);
-      const ticks = document.createElement("div"); ticks.className = "ticks";
-      for (const x of mode.ticks()) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: x }));
-      scale.appendChild(ticks);
     }
     scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: t("last_updated"), style: "margin-top:10px" }));
     const keys = document.createElement("div"); keys.className = "keys";
@@ -1414,6 +1398,8 @@
       }
       for (const p of map.values()) { p.pts.sort((a, b) => a.t - b.t); p.last = p.pts[p.pts.length - 1].t; }
       state.plants = map;
+      state.pub.plants = rows[0]?.Date_of_report;
+      renderPubs();
       const active = fillPlantSelect();
       let pick = null;
       try { pick = localStorage.getItem("covidnl.plant"); } catch (e) {}
@@ -1463,17 +1449,18 @@
     mapState.legendKey = "";
     drawAll(); drawMap();
   }
-  function renderStatus(){
-    const status = document.getElementById("status");
-    status.classList.toggle("err", !!state.failed?.length);
-    status.textContent = !state.loaded ? t("status_loading")
-      : state.failed.length ? tf("status_failed", { list: state.failed.join(", ") })
-      : tf("status_published", { date: state.report ? fmtDate(day(state.report)) : "–" });
+  // each graph shows when RIVM published the file it is drawn from
+  function renderPubs(){
+    for (const el of document.querySelectorAll("[data-pub]")) {
+      const key = el.dataset.pub, failed = state.failed.includes(key), date = state.pub[key];
+      el.classList.toggle("err", failed);
+      el.textContent = failed ? "· " + t("load_error") : date ? "· " + tf("published", { date: fmtDate(day(date.slice(0, 10))) }) : "";
+    }
   }
   Toolbox.initTheme({ button: document.getElementById("themeToggle"), fallback: "system", onChange: redrawAll });
   i18n = Toolbox.initLang({ dict: I18N, fallback: "nl", onChange: (lang) => {
     setLocale(lang);
-    renderStatus(); renderLoadLinks(); fillPlantSelect();
+    renderPubs(); renderLoadLinks(); fillPlantSelect();
     const play = document.getElementById("mapplay");
     play.setAttribute("aria-label", t(mapState.timer ? "pause" : "play"));
     redrawAll();
@@ -1482,15 +1469,21 @@
   // ---------- boot ----------
   async function boot(){
     const jobs = {
-      sewage: load("sewage").then(r => { state.data.sewage = sewageSeries(r); state.report = r[0]?.Date_of_report; drawSewage(); drawPlant(); }),
-      pos: load("pos").then(r => { state.data.pos = simpleSeries(r, "Date_of_statistics", "Perc_covid_test_positive"); drawPos(); }),
-      ari: load("ari").then(r => { const raw = simpleSeries(r, "Date_of_statistics", "Perc_ARI_symptoms"); state.data.ari = { raw, ma: movingAvg(raw, 7) }; drawAri(); }),
-      variants: load("variants").then(r => { state.data.variants = variantMonths(r); drawVariants(); }),
+      sewage: load("sewage").then(r => { state.data.sewage = sewageSeries(r); state.pub.sewage = r[0]?.Date_of_report; drawSewage(); drawPlant(); }),
+      pos: load("pos").then(r => { state.data.pos = simpleSeries(r, "Date_of_statistics", "Perc_covid_test_positive"); state.pub.pos = r[0]?.Date_of_report; drawPos(); }),
+      ari: load("ari").then(r => { const raw = simpleSeries(r, "Date_of_statistics", "Perc_ARI_symptoms"); state.data.ari = { raw, ma: movingAvg(raw, 7) }; state.pub.ari = r[0]?.Date_of_report; drawAri(); }),
+      variants: load("variants").then(r => { state.data.variants = variantMonths(r); state.pub.variants = r[0]?.Date_of_report; drawVariants(); }),
     };
+    for (const job of Object.values(jobs)) job.then(renderPubs, () => {});
     const res = await Promise.allSettled(Object.values(jobs));
     state.failed = res.map((r, i) => r.status === "rejected" ? Object.keys(jobs)[i] : null).filter(Boolean);
-    state.loaded = true;
-    renderStatus();
+    // a graph whose file failed says so where the chart would be
+    const cardOf = { sewage: "c-sewage", pos: "c-pos", ari: "c-ari", variants: "c-var" };
+    for (const key of state.failed) {
+      const box = document.getElementById(cardOf[key]).querySelector("[data-chart]");
+      box.replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: t("load_error") }));
+    }
+    renderPubs();
   }
   drawMap();
   boot();

@@ -1,6 +1,34 @@
 /* Shared toolbox components: language switch, theme button, disclaimer box.
  * Uses the page's own tokens: --line, --surface, --ink, --muted, --accent, --accent-ink, --warn, --warn-soft. */
+/* sticky page-settings bar; pages can set --bar-max and --bar-pad to line it up with their content */
+.stickybar{
+  position:sticky;
+  top:0;
+  z-index:60;
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+.stickybar-inner{
+  max-width:var(--bar-max, 1180px);
+  margin:0 auto;
+  padding:10px var(--bar-pad, 20px);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+}
 .toolbar{ display:inline-flex; align-items:center; gap:8px; }
+.helpbtn{
+  font:inherit; font-size:12.5px; font-weight:700;
+  border:1px solid var(--line); border-radius:999px;
+  background:var(--surface); color:var(--ink);
+  padding:7px 14px; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.helpbtn:hover{ border-color:var(--accent); color:var(--accent); }
+.helpbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 .langtoggle{
   display:inline-flex;
   border:1px solid var(--line);
