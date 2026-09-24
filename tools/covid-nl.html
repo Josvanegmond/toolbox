@@ -190,9 +190,11 @@
   .keys i.sq{ border-radius:2px; background:var(--nodata); }
   .keys i.dot{ border-radius:50%; border:1.5px solid #ffffff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
   .keys i.dot.old{ background:transparent; border-color:#8b8a84; box-shadow:none; width:9px; height:9px; }
-  table.kv{ width:100%; table-layout:fixed; font-size:12px; }
-  table.kv td, table.kv th{ padding:3px 0; border:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  table.kv th{ font-weight:400; color:var(--muted); width:42%; }
+  table.kv{ width:auto; font-size:12px; }
+  table.kv td, table.kv th{ padding:4px 10px; text-align:left; white-space:nowrap; }
+  table.kv th{ font-weight:400; color:var(--muted); background:none; position:static; }
+  /* fixed width so the open panel does not resize while the slider moves */
+  details.stats .tblwrap{ width:17em; max-width:100%; }
   table.kv td{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
   .timeline{ display:flex; align-items:center; gap:10px; margin-top:6px; }
   .timeline[hidden]{ display:none; }
@@ -270,11 +272,11 @@
         </div>
         <div class="mapside">
           <div class="scale" data-scale></div>
-          <table class="kv" data-stats></table>
         </div>
       </div>
       <div class="foot"><span class="links">
           <details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <details class="tbl stats"><summary>Stats</summary><div class="tblwrap"><table class="kv" data-stats></table></div></details>
           <details class="tbl method"><summary>Method</summary><div class="tblwrap"><table><tbody>
             <tr><td>Growth</td><td>4-week trend, % per week (straight-line fit on log of weekly level)</td></tr>
             <tr><td>Level</td><td>Mean of stations that reported that week</td></tr>
