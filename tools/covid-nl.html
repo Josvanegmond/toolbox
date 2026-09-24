@@ -199,9 +199,13 @@
   table.kv td{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
   .timeline{ display:flex; align-items:center; gap:10px; margin-top:6px; }
   .timeline[hidden]{ display:none; }
+  @media (max-width:560px){
+    .timeline{ flex-wrap:wrap; }
+    .timeline > output#mapweeklabel{ order:-1; width:100%; text-align:left; }
+  }
   .map .empty{ min-height:240px; }
   .timeline input{ flex:1; min-width:0; accent-color:var(--accent); }
-  .timeline output{ font-size:13px; font-weight:600; width:6.6em; flex:none; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .timeline output{ font-size:13px; font-weight:600; width:13em; flex:none; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .play{ font:inherit; font-size:13px; width:34px; height:34px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
   .play:hover{ border-color:var(--accent); }
   .play:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -393,6 +397,13 @@
   // ---------- formatting ----------
   const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const fmtDate = (t) => { const d = new Date(t); return d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+  // a Monday-to-Sunday week: "14–20 Sep 2026", "28 Sep – 4 Oct 2026", "29 Dec 2025 – 4 Jan 2026"
+  const fmtWeek = (t) => {
+    const a = new Date(t), b = new Date(t + 6 * DAY);
+    if (a.getUTCFullYear() !== b.getUTCFullYear()) return fmtDate(t) + " – " + fmtDate(b.getTime());
+    if (a.getUTCMonth() !== b.getUTCMonth()) return a.getUTCDate() + " " + MON[a.getUTCMonth()] + " – " + fmtDate(b.getTime());
+    return a.getUTCDate() + "–" + fmtDate(b.getTime());
+  };
   const fmtMonth = (t) => { const d = new Date(t); return MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
   const nf = (d) => new Intl.NumberFormat("en-GB", { maximumFractionDigits: d, minimumFractionDigits: d });
   const f0 = nf(0), f1 = nf(1);
@@ -996,7 +1007,7 @@
     const selDot = g.querySelector("circle.sel");
     if (selDot) { g.appendChild(selDot); selDot.setAttribute("r", R * 1.25); }
 
-    document.getElementById("mapweeklabel").textContent = fmtDate(mapState.weeks[wi]);
+    document.getElementById("mapweeklabel").textContent = fmtWeek(mapState.weeks[wi]);
     document.getElementById("mapweek").value = String(wi);
 
     // fixed rows, so nothing reflows while the slider moves
@@ -1031,7 +1042,7 @@
   function mapTip(i){
     const box = document.querySelector("#c-map [data-map]"), tip = tipFor(box), wi = mapState.week;
     const g = mapState.growth[i][wi], lv = mapState.level[i][wi], u = mapState.updated[i][wi], N = mapState.stationsTotal[i];
-    tipRows(tip, GEO.provinces[i].name + " · " + fmtDate(mapState.weeks[wi]), [
+    tipRows(tip, GEO.provinces[i].name + " · " + fmtWeek(mapState.weeks[wi]), [
       { color: g == null ? css("--nodata") : MODES.growth.color(g), value: g == null ? "–" : MODES.growth.fmt(g), name: "" },
       { color: lv == null ? css("--nodata") : MODES.level.color(lv), value: lv == null ? "no data" : MODES.level.fmt(lv), name: "" },
       ...u.map((n, k) => ({ color: AGES[k].color, value: n + " / " + N, name: k ? "stations ≤ " + (k + 1) + " wk" : "stations this week" })),
