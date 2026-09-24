@@ -1,0 +1,2 @@
+# Local copies of large source datasets (e.g. RIVM CSVs); tools fetch these live
+data/raw/

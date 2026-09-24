@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COVID-19 Netherlands</title>
+<style>
+  :root{
+    color-scheme: light;
+    --ground:#ffffff;
+    --surface:#ffffff;
+    --surface-2:#f4f6f6;
+    --ink:#0a0d0e;
+    --muted:#5a6366;
+    --line:#dde2e3;
+    --accent:#0a8f99;
+    --accent-ink:#ffffff;
+    --accent-soft:#dff3f4;
+    --warn:#b5490f;
+    --shadow: 0 1px 2px rgba(10,13,14,0.04), 0 8px 24px -12px rgba(10,13,14,0.16);
+    --grid:#e1e0d9;
+    --axis:#c3c2b7;
+    --tick:#6b6a65;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
+    --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+    --other:#b4b3ad;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --ground:#000000;
+      --surface:#141819;
+      --surface-2:#0e1112;
+      --ink:#f3f6f6;
+      --muted:#93a0a2;
+      --line:#282f30;
+      --accent:#2fd8e0;
+      --accent-ink:#00191b;
+      --accent-soft:rgba(47,216,224,0.14);
+      --warn:#ff9a5c;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+      --grid:#2c2c2a;
+      --axis:#383835;
+      --tick:#898781;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+      --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+      --other:#5c5b57;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ground:#000000;
+    --surface:#141819;
+    --surface-2:#0e1112;
+    --ink:#f3f6f6;
+    --muted:#93a0a2;
+    --line:#282f30;
+    --accent:#2fd8e0;
+    --accent-ink:#00191b;
+    --accent-soft:rgba(47,216,224,0.14);
+    --warn:#ff9a5c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px -12px rgba(0,0,0,0.6);
+    --grid:#2c2c2a;
+    --axis:#383835;
+    --tick:#898781;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
+    --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+    --other:#5c5b57;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height:1.45;
+  }
+  .wrap{ max-width:960px; margin:0 auto; padding:48px 16px 80px; }
+  header{ margin-bottom:24px; }
+  header .eyebrow{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); }
+  header .eyebrow a{ color:inherit; text-decoration:none; }
+  header .eyebrow a:hover{ color:var(--accent); }
+  h1{
+    font-family: "Iowan Old Style","Palatino Linotype", Palatino, Georgia, serif;
+    font-size:34px; font-weight:600; margin:6px 0 8px; text-wrap:balance;
+  }
+  header p{ margin:0; color:var(--muted); font-size:15px; max-width:64ch; }
+
+  .controls{
+    display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px;
+    margin:0 0 20px; position:sticky; top:0; z-index:5;
+    background:var(--ground); padding:10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:999px; padding:3px; background:var(--surface); }
+  .seg button{
+    font:inherit; font-size:13px; font-weight:600; color:var(--muted);
+    background:none; border:0; border-radius:999px; padding:5px 12px; cursor:pointer;
+  }
+  .seg button:hover{ color:var(--ink); }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:var(--accent-ink); }
+  .seg button:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .status{ font-size:12.5px; color:var(--muted); }
+  .status.err{ color:var(--warn); }
+
+  .grid{ display:grid; grid-template-columns:1fr; gap:16px; }
+  @media (min-width:860px){ .grid.two{ grid-template-columns:1fr 1fr; } }
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    box-shadow:var(--shadow); padding:18px 18px 14px; min-width:0;
+  }
+  .card h2{ font-size:16px; margin:0 0 2px; font-weight:700; }
+  .card .sub{ font-size:12.5px; color:var(--muted); margin:0 0 10px; }
+  .stat{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:4px 0 8px; }
+  .stat .v{ font-size:26px; font-weight:700; letter-spacing:-0.01em; }
+  .stat .u{ font-size:12.5px; color:var(--muted); }
+  .legend{ display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12.5px; color:var(--muted); margin:2px 0 6px; }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ display:inline-block; width:14px; height:2px; border-radius:1px; }
+  .legend i.box{ width:10px; height:10px; border-radius:2px; }
+  .chart{ position:relative; width:100%; height:240px; }
+  .chart.tall{ height:300px; }
+  .chart svg{ display:block; width:100%; height:100%; overflow:visible; }
+  .chart svg:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
+  .chart.loading{ opacity:.45; }
+  .empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--muted); font-size:13px; }
+  .foot{ display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 12px; margin-top:8px; font-size:12px; color:var(--muted); }
+  .foot a{ color:var(--muted); }
+  details.tbl summary{ cursor:pointer; }
+  details.tbl summary:hover{ color:var(--ink); }
+  .tblwrap{ max-height:260px; overflow:auto; margin-top:8px; border:1px solid var(--line); border-radius:8px; }
+  table{ border-collapse:collapse; width:100%; font-size:12.5px; font-variant-numeric:tabular-nums; }
+  th,td{ padding:4px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th:first-child,td:first-child{ text-align:left; }
+  thead th{ position:sticky; top:0; background:var(--surface-2); color:var(--muted); font-weight:600; }
+  .note{ font-size:12px; color:var(--muted); margin:8px 0 0; }
+
+  .tip{
+    position:absolute; pointer-events:none; z-index:10;
+    background:var(--surface); color:var(--ink);
+    border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow);
+    padding:7px 10px; font-size:12px; line-height:1.35; min-width:140px; max-width:240px;
+    display:none;
+  }
+  .tip .d{ color:var(--muted); margin-bottom:3px; }
+  .tip .row{ display:flex; align-items:center; gap:7px; }
+  .tip .row i{ width:12px; height:2px; border-radius:1px; flex:none; }
+  .tip .row b{ font-variant-numeric:tabular-nums; }
+  .tip .row span{ color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  .plantbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:4px 0 8px; }
+  select, .btn{
+    font:inherit; font-size:13px; color:var(--ink); background:var(--surface);
+    border:1px solid var(--line); border-radius:8px; padding:6px 10px; max-width:100%;
+  }
+  .btn{ cursor:pointer; font-weight:600; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
+  .btn:disabled{ opacity:.6; cursor:progress; }
+
+  footer{ margin-top:36px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+  footer a{ color:var(--muted); }
+  footer p{ margin:0 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow"><a href="../index.html">Toolbox</a> · RIVM open data</span>
+    <h1>COVID-19 in the Netherlands</h1>
+    <p>Sewage surveillance, Infectieradar self-reports and variant sequencing, loaded directly from the RIVM open-data server each time you open this page. RIVM publishes new figures on Wednesdays.</p>
+  </header>
+
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Time range" id="range">
+      <button type="button" data-m="3">3 mo</button>
+      <button type="button" data-m="6">6 mo</button>
+      <button type="button" data-m="12">1 yr</button>
+      <button type="button" data-m="24">2 yr</button>
+      <button type="button" data-m="0">All</button>
+    </div>
+    <span class="status" id="status" role="status">Loading RIVM data…</span>
+  </div>
+
+  <div class="grid">
+    <section class="card" id="c-sewage">
+      <h2>Virus in sewage, national average</h2>
+      <p class="sub">SARS-CoV-2 RNA particles per 100,000 inhabitants, population-weighted over treatment plants</p>
+      <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
+      <div class="chart tall" data-chart></div>
+      <p class="note">Since 7 July 2025 RIVM measures about 133 plants (40%) once a week instead of all plants several times a week, so the curve is coarser from then on.</p>
+      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM, rioolwaterdata landelijk</a></span></div>
+    </section>
+
+    <div class="grid two">
+      <section class="card" id="c-pos">
+        <h2>Positive COVID tests, Infectieradar</h2>
+        <p class="sub">% of Infectieradar participants reporting a positive self-test or PCR test, per calendar week</p>
+        <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
+        <div class="chart" data-chart></div>
+        <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/0bae0312-6e26-41dc-a986-74a60e46c249" target="_blank" rel="noopener">RIVM, Infectieradar</a></span></div>
+      </section>
+
+      <section class="card" id="c-ari">
+        <h2>Respiratory symptoms, Infectieradar</h2>
+        <p class="sub">% of participants with acute respiratory infection symptoms (cough, sore throat, shortness of breath, runny nose) in the past week. Covers all respiratory infections, not only COVID-19.</p>
+        <div class="stat"><span class="v" data-stat>–</span><span class="u" data-statu></span></div>
+        <div class="legend" data-legend></div>
+        <div class="chart" data-chart></div>
+        <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/05b0d961-77fc-4fb5-8c38-0d2df0b6143d" target="_blank" rel="noopener">RIVM, Infectieradar ARI</a></span></div>
+      </section>
+    </div>
+
+    <section class="card" id="c-var">
+      <h2>Variants in random sequencing samples</h2>
+      <p class="sub">Share of sequenced samples per month, each sample counted once under its most specific listed lineage</p>
+      <div class="legend" data-legend></div>
+      <div class="chart tall" data-chart></div>
+      <p class="note">RIVM leaves out the two most recent weeks. Since mid-2026 only 1–5 samples are sequenced per week, so recent monthly shares rest on a handful of samples. The sample count (n) is in the tooltip and table.</p>
+      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM, kiemsurveillance varianten</a></span></div>
+    </section>
+
+    <section class="card" id="c-plant">
+      <h2>Virus in sewage, per treatment plant</h2>
+      <p class="sub">Measurements for one treatment plant (RWZI), compared with the national average</p>
+      <div class="plantbar">
+        <button class="btn" type="button" id="plantload">Load per-plant data (≈ 9.8 MB)</button>
+        <select id="plantsel" hidden aria-label="Treatment plant"></select>
+      </div>
+      <div class="legend" data-legend></div>
+      <div class="chart tall" data-chart><div class="empty">Per-plant data loads only when you ask for it.</div></div>
+      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM, rioolwaterdata per RWZI</a></span></div>
+    </section>
+  </div>
+
+  <footer>
+    <p>Data: Rijksinstituut voor Volksgezondheid en Milieu (RIVM), <a href="https://data.rivm.nl/covid-19/" target="_blank" rel="noopener">data.rivm.nl/covid-19</a>, public domain. Also listed on <a href="https://data.overheid.nl/" target="_blank" rel="noopener">data.overheid.nl</a>; the "modified" date shown there is the date the dataset was first registered, not the date of the data.</p>
+    <p>The per-variant chart treats counts as nested: per RIVM's metadata, a sub-variant's cases are a subset of its parent's, so each parent keeps only the cases not assigned to a listed sub-variant. Samples not assigned to any listed variant count as "Other". Recent weeks sometimes list one sample under two sibling lineages, so shares are computed over all assignments in the month rather than over the sample count.</p>
+    <p><a href="https://github.com/Josvanegmond/toolbox" target="_blank" rel="noopener">Source on GitHub</a></p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const BASE = "https://data.rivm.nl/covid-19/";
+  const FILES = {
+    sewage: "COVID-19_rioolwaterdata_landelijk.csv",
+    pos: "COVID-19_infectieradar_positieve_testuitslagen_per_week.csv",
+    ari: "ARI_Infectieradar_symptomen_per_dag.csv",
+    variants: "COVID-19_varianten.csv",
+    plants: "COVID-19_rioolwaterdata.csv",
+  };
+  const DAY = 86400000;
+  const SLOTS = ["--s1","--s2","--s3","--s4","--s5","--s6","--s7","--s8"];
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  // ---------- parsing ----------
+  function parseCSV(text){
+    const lines = text.replace(/\r/g, "").split("\n").filter(Boolean);
+    const head = lines[0].split(";");
+    return lines.slice(1).map(l => {
+      const c = l.split(";"), o = {};
+      head.forEach((h, i) => { o[h] = c[i] ?? ""; });
+      return o;
+    });
+  }
+  const num = (s) => {
+    if (s == null) return NaN;
+    s = String(s).trim();
+    if (!s || s === "NA") return NaN;
+    return Number(s.replace(",", "."));
+  };
+  const day = (s) => Date.UTC(+s.slice(0,4), +s.slice(5,7) - 1, +s.slice(8,10));
+
+  async function load(key){
+    const r = await fetch(BASE + FILES[key]);
+    if (!r.ok) throw new Error(FILES[key] + ": HTTP " + r.status);
+    return parseCSV(await r.text());
+  }
+
+  // ---------- formatting ----------
+  const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const fmtDate = (t) => { const d = new Date(t); return d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+  const fmtMonth = (t) => { const d = new Date(t); return MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+  const nf = (d) => new Intl.NumberFormat("en-GB", { maximumFractionDigits: d, minimumFractionDigits: d });
+  const f0 = nf(0), f1 = nf(1);
+  const sewageFmt = (v) => f0.format(v / 1e11);
+  const pctFmt = (v) => f1.format(v) + "%";
+
+  // ---------- state ----------
+  const state = { months: 12, data: {}, plants: null, plantCode: null };
+  try { const m = localStorage.getItem("covidnl.months"); if (m !== null) state.months = +m; } catch (e) {}
+
+  function cutoff(){
+    if (!state.months) return -Infinity;
+    const now = new Date();
+    return Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - state.months, now.getUTCDate());
+  }
+
+  // ---------- chart primitives ----------
+  function el(name, attrs, parent){
+    const n = document.createElementNS(svgNS, name);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  // y ticks at a round step (1, 2, 2.5 or 5 × 10^k), about four intervals
+  function niceTicks(v){
+    if (!(v > 0)) v = 1;
+    const raw = v / 4, p = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(m => m * p).find(s => s >= raw);
+    const n = Math.ceil(v / step - 1e-9), ticks = [];
+    for (let i = 0; i <= n; i++) ticks.push(+(i * step).toPrecision(12));
+    return { max: n * step, ticks };
+  }
+  function timeTicks(t0, t1, width){
+    const span = (t1 - t0) / DAY;
+    const maxTicks = Math.max(2, Math.floor(width / 70));
+    const stepsM = [1, 2, 3, 6, 12, 24];
+    let step = stepsM.find(s => span / (30.4 * s) <= maxTicks) || 24;
+    const d0 = new Date(t0), out = [];
+    let y = d0.getUTCFullYear(), m = d0.getUTCMonth() + 1;
+    if (step >= 12) { m = 0; y += 1; } else { m = Math.ceil(m / step) * step; }
+    for (;;) {
+      const t = Date.UTC(y, m, 1);
+      if (t > t1) break;
+      if (t >= t0) out.push({ t, label: (step >= 12 || m % 12 === 0) ? String(new Date(t).getUTCFullYear()) : MON[new Date(t).getUTCMonth()] });
+      m += step;
+    }
+    return out;
+  }
+  function tipFor(box){
+    let tip = box.querySelector(".tip");
+    if (!tip) { tip = document.createElement("div"); tip.className = "tip"; box.appendChild(tip); }
+    return tip;
+  }
+  function placeTip(box, tip, x, y){
+    tip.style.display = "block";
+    const bw = box.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+    let left = x + 14; if (left + tw > bw) left = x - tw - 14; if (left < 0) left = 0;
+    let top = y - th / 2; if (top < -8) top = -8;
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }
+  function tipRows(tip, title, rows){
+    tip.replaceChildren();
+    const d = document.createElement("div"); d.className = "d"; d.textContent = title; tip.appendChild(d);
+    for (const r of rows) {
+      const row = document.createElement("div"); row.className = "row";
+      const i = document.createElement("i"); i.style.background = r.color;
+      const b = document.createElement("b"); b.textContent = r.value;
+      const s = document.createElement("span"); s.textContent = r.name;
+      row.append(i, b, s); tip.appendChild(row);
+    }
+  }
+  function renderLegend(node, items, box){
+    if (!node) return;
+    node.replaceChildren();
+    if (items.length < 2) return;
+    for (const it of items) {
+      const s = document.createElement("span");
+      const i = document.createElement("i"); if (box) i.className = "box"; i.style.background = it.color;
+      s.append(i, document.createTextNode(it.name)); node.appendChild(s);
+    }
+  }
+  function nearest(pts, t){
+    let lo = 0, hi = pts.length - 1;
+    if (hi < 0) return null;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (pts[mid].t < t) lo = mid; else hi = mid; }
+    return Math.abs(pts[lo].t - t) <= Math.abs(pts[hi].t - t) ? pts[lo] : pts[hi];
+  }
+
+  // Line chart. series: [{name, color, width, pts:[{t,v}]}]
+  function lineChart(box, series, opt){
+    box.querySelector("svg")?.remove();
+    box.querySelector(".empty")?.remove();
+    const all = series.flatMap(s => s.pts);
+    if (!all.length) { const e = document.createElement("div"); e.className = "empty"; e.textContent = "No data in this range."; box.appendChild(e); return; }
+    const W = box.clientWidth, H = box.clientHeight;
+    const M = { l: 44, r: 10, t: 10, b: 24 };
+    const t0 = opt.t0 ?? Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
+    const yt = niceTicks(Math.max(...all.map(p => p.v))), yMax = yt.max;
+    const x = (t) => M.l + (t1 === t0 ? 0.5 : (t - t0) / (t1 - t0)) * (W - M.l - M.r);
+    const y = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: "0", "aria-label": opt.label }, null);
+
+    const g = el("g", {}, svg);
+    for (const v of yt.ticks) {
+      const yy = y(v);
+      el("line", { x1: M.l, x2: W - M.r, y1: yy, y2: yy, stroke: v === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }, g);
+      const tx = el("text", { x: M.l - 6, y: yy + 3.5, "text-anchor": "end", "font-size": 11, fill: css("--tick") }, g);
+      tx.textContent = opt.yFmt(v, (String(yt.ticks[1] ?? 1).split(".")[1] || "").length);
+    }
+    for (const tk of timeTicks(t0, t1, W - M.l - M.r)) {
+      const tx = el("text", { x: x(tk.t), y: H - 6, "text-anchor": "middle", "font-size": 11, fill: css("--tick") }, g);
+      tx.textContent = tk.label;
+    }
+    for (const s of series) {
+      if (!s.pts.length) continue;
+      let d = "", pen = false, prev = null;
+      for (const p of s.pts) {
+        const gap = prev && s.maxGap && (p.t - prev.t) > s.maxGap;
+        d += (pen && !gap ? "L" : "M") + x(p.t).toFixed(1) + "," + y(p.v).toFixed(1);
+        pen = true; prev = p;
+      }
+      el("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+      if (s.pts.length < 60 && s.dots !== false) {
+        for (const p of s.pts) el("circle", { cx: x(p.t), cy: y(p.v), r: 2.5, fill: s.color }, svg);
+      }
+    }
+
+    // hover layer: crosshair snaps to the nearest date of the primary series
+    const cross = el("line", { y1: M.t, y2: H - M.b, stroke: css("--tick"), "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+    const dots = series.map(s => el("circle", { r: 4.5, fill: s.color, stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg));
+    const primary = series[opt.primary || 0].pts.length ? series[opt.primary || 0].pts : all.slice().sort((a, b) => a.t - b.t);
+    const tip = tipFor(box);
+    let idx = -1;
+    function show(p){
+      if (!p) return;
+      cross.setAttribute("x1", x(p.t)); cross.setAttribute("x2", x(p.t)); cross.setAttribute("visibility", "visible");
+      const rows = [];
+      series.forEach((s, i) => {
+        const q = nearest(s.pts, p.t);
+        const tol = s.tol ?? 4 * DAY;
+        if (q && Math.abs(q.t - p.t) <= tol) {
+          dots[i].setAttribute("cx", x(q.t)); dots[i].setAttribute("cy", y(q.v)); dots[i].setAttribute("visibility", "visible");
+          rows.push({ color: s.color, value: opt.tipFmt(q.v), name: s.name });
+        } else dots[i].setAttribute("visibility", "hidden");
+      });
+      tipRows(tip, (opt.dateFmt || fmtDate)(p.t), rows);
+      placeTip(box, tip, x(p.t), y(nearest(primary, p.t).v));
+    }
+    function hide(){ cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); tip.style.display = "none"; }
+    svg.addEventListener("pointermove", (ev) => {
+      const r = svg.getBoundingClientRect();
+      const px = (ev.clientX - r.left) * (W / r.width);
+      const t = t0 + (px - M.l) / (W - M.l - M.r) * (t1 - t0);
+      const p = nearest(primary, t); idx = primary.indexOf(p); show(p);
+    });
+    svg.addEventListener("pointerleave", hide);
+    svg.addEventListener("blur", hide);
+    svg.addEventListener("keydown", (ev) => {
+      if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight") return;
+      ev.preventDefault();
+      if (idx < 0) idx = primary.length - 1; else idx = Math.max(0, Math.min(primary.length - 1, idx + (ev.key === "ArrowRight" ? 1 : -1)));
+      show(primary[idx]);
+    });
+    box.appendChild(svg);
+  }
+
+  // Stacked 100% bar chart. cats: [{t, n, shares:{name:frac}}], keys: [{name,color}]
+  function stackChart(box, cats, keys){
+    box.querySelector("svg")?.remove();
+    box.querySelector(".empty")?.remove();
+    if (!cats.length) { const e = document.createElement("div"); e.className = "empty"; e.textContent = "No data in this range."; box.appendChild(e); return; }
+    const W = box.clientWidth, H = box.clientHeight;
+    const M = { l: 40, r: 6, t: 10, b: 24 };
+    const bw = (W - M.l - M.r) / cats.length;
+    const y = (v) => H - M.b - v * (H - M.t - M.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Variant share per month, stacked bars" }, null);
+    for (let i = 0; i <= 4; i++) {
+      const yy = y(i / 4);
+      el("line", { x1: M.l, x2: W - M.r, y1: yy, y2: yy, stroke: i === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }, svg);
+      const tx = el("text", { x: M.l - 6, y: yy + 3.5, "text-anchor": "end", "font-size": 11, fill: css("--tick") }, svg);
+      tx.textContent = (i * 25) + "%";
+    }
+    const every = Math.ceil(cats.length / Math.max(2, Math.floor((W - M.l - M.r) / 60)));
+    const tip = tipFor(box);
+    const surface = css("--surface");
+    cats.forEach((c, i) => {
+      const x0 = M.l + i * bw, gap = Math.min(2, bw * 0.2), w = Math.max(1, bw - gap);
+      const d = new Date(c.t);
+      if (i % every === 0) {
+        const tx = el("text", { x: x0 + bw / 2, y: H - 6, "text-anchor": "middle", "font-size": 11, fill: css("--tick") }, svg);
+        tx.textContent = d.getUTCMonth() === 0 || every >= 12 ? String(d.getUTCFullYear()) : MON[d.getUTCMonth()];
+      }
+      const g = el("g", { tabindex: "0", role: "img", "aria-label": fmtMonth(c.t) }, svg);
+      let acc = 0;
+      for (const k of keys) {
+        const v = c.shares[k.name] || 0;
+        if (v <= 0) continue;
+        const y1 = y(acc + v), y0 = y(acc);
+        el("rect", { x: x0 + gap / 2, y: y1, width: w, height: Math.max(0, y0 - y1), fill: k.color, stroke: surface, "stroke-width": bw > 6 ? 1 : 0 }, g);
+        acc += v;
+      }
+      const hit = el("rect", { x: x0, y: M.t, width: bw, height: H - M.t - M.b, fill: "transparent" }, g);
+      const showTip = () => {
+        g.setAttribute("opacity", "0.85");
+        const rows = keys.filter(k => (c.shares[k.name] || 0) > 0).reverse()
+          .map(k => ({ color: k.color, value: Math.round(c.shares[k.name] * 100) + "%", name: k.name }));
+        tipRows(tip, fmtMonth(c.t) + " · n = " + c.n, rows);
+        placeTip(box, tip, x0 + bw / 2, H / 2);
+      };
+      const hideTip = () => { g.removeAttribute("opacity"); tip.style.display = "none"; };
+      hit.addEventListener("pointerenter", showTip); hit.addEventListener("pointerleave", hideTip);
+      g.addEventListener("focus", showTip); g.addEventListener("blur", hideTip);
+    });
+    box.appendChild(svg);
+  }
+
+  function renderTable(node, head, rows){
+    const t = document.createElement("table");
+    const thead = t.createTHead().insertRow();
+    for (const h of head) { const th = document.createElement("th"); th.textContent = h; thead.appendChild(th); }
+    const tb = t.createTBody();
+    for (const r of rows) { const tr = tb.insertRow(); for (const c of r) tr.insertCell().textContent = c; }
+    node.replaceChildren(t);
+  }
+
+  function setStat(card, value, unit){
+    card.querySelector("[data-stat]").textContent = value;
+    card.querySelector("[data-statu]").textContent = unit;
+  }
+
+  // ---------- data shaping ----------
+  function sewageSeries(rows){
+    return rows.map(r => ({ t: day(r.Date_measurement), v: num(r.RNA_flow_per_100000) }))
+      .filter(p => isFinite(p.v)).sort((a, b) => a.t - b.t);
+  }
+  function simpleSeries(rows, dateKey, valKey){
+    return rows.map(r => ({ t: day(r[dateKey]), v: num(r[valKey]) })).filter(p => isFinite(p.v)).sort((a, b) => a.t - b.t);
+  }
+  function movingAvg(pts, n){
+    // centred 7-day mean over calendar days, only where the full window is present
+    const byT = new Map(pts.map(p => [p.t, p.v])), half = (n - 1) / 2, out = [];
+    for (const p of pts) {
+      let s = 0, k = 0;
+      for (let d = -half; d <= half; d++) { const v = byT.get(p.t + d * DAY); if (v !== undefined) { s += v; k++; } }
+      if (k === n) out.push({ t: p.t, v: s / n });
+    }
+    return out;
+  }
+  function variantMonths(rows){
+    // exclusive counts per week, then summed per month
+    const weeks = new Map();
+    for (const r of rows) {
+      const w = r.Date_of_statistics_week_start;
+      if (!weeks.has(w)) weeks.set(w, { n: +r.Sample_size, rows: [] });
+      weeks.get(w).rows.push(r);
+    }
+    const months = new Map();
+    for (const [w, wk] of weeks) {
+      const child = new Map();
+      for (const r of wk.rows) if (r.Is_subvariant_of) child.set(r.Is_subvariant_of, (child.get(r.Is_subvariant_of) || 0) + (+r.Variant_cases));
+      const mk = w.slice(0, 7);
+      if (!months.has(mk)) months.set(mk, { t: day(mk + "-01"), n: 0, den: 0, counts: new Map() });
+      const m = months.get(mk);
+      m.n += wk.n;
+      let assigned = 0;
+      for (const r of wk.rows) {
+        const ex = Math.max(0, (+r.Variant_cases) - (child.get(r.Variant_code) || 0));
+        if (!ex) continue;
+        const name = r.Variant_code === r.Variant_name || !r.Variant_name ? r.Variant_code : r.Variant_code + " (" + r.Variant_name + ")";
+        m.counts.set(name, (m.counts.get(name) || 0) + ex);
+        assigned += ex;
+      }
+      // RIVM's lineages can overlap (one sample under two listed siblings), so a week can
+      // hold more assignments than samples; shares are taken over assignments, not samples
+      const other = Math.max(0, wk.n - assigned);
+      m.counts.set("Other", (m.counts.get("Other") || 0) + other);
+      m.den += assigned + other;
+    }
+    return [...months.values()].filter(m => m.n > 0).sort((a, b) => a.t - b.t);
+  }
+
+  // ---------- renderers ----------
+  function drawSewage(){
+    const card = document.getElementById("c-sewage"), all = state.data.sewage;
+    if (!all) return;
+    const pts = all.filter(p => p.t >= cutoff()), last = all[all.length - 1];
+    setStat(card, sewageFmt(last.v), "× 10¹¹ per 100,000 inhabitants · " + fmtDate(last.t));
+    lineChart(card.querySelector("[data-chart]"), [{ name: "National average", color: css("--s1"), pts, maxGap: 9 * DAY }],
+      { yFmt: sewageFmt, tipFmt: (v) => sewageFmt(v) + " × 10¹¹", label: "Sewage virus load, national average" });
+    renderTable(card.querySelector("[data-table]"), ["Date", "RNA × 10¹¹ / 100k"], pts.slice().reverse().map(p => [fmtDate(p.t), sewageFmt(p.v)]));
+  }
+  function drawPos(){
+    const card = document.getElementById("c-pos"), all = state.data.pos;
+    if (!all) return;
+    const pts = all.filter(p => p.t >= cutoff()), last = all[all.length - 1];
+    setStat(card, pctFmt(last.v), "week of " + fmtDate(last.t));
+    lineChart(card.querySelector("[data-chart]"), [{ name: "Positive test", color: css("--s1"), pts, tol: 4 * DAY }],
+      { yFmt: (v, d) => v.toFixed(d) + "%", tipFmt: pctFmt, label: "Percentage positive COVID tests per week", dateFmt: (t) => "Week of " + fmtDate(t) });
+    renderTable(card.querySelector("[data-table]"), ["Week starting", "% positive"], pts.slice().reverse().map(p => [fmtDate(p.t), pctFmt(p.v)]));
+  }
+  function drawAri(){
+    const card = document.getElementById("c-ari"), all = state.data.ari;
+    if (!all) return;
+    const c = cutoff(), raw = all.raw.filter(p => p.t >= c), ma = all.ma.filter(p => p.t >= c);
+    const lastMa = all.ma[all.ma.length - 1];
+    setStat(card, pctFmt(lastMa.v), "7-day average · " + fmtDate(lastMa.t));
+    const series = [
+      { name: "7-day average", color: css("--s1"), pts: ma, width: 2, dots: false, tol: 0 },
+      { name: "Daily", color: css("--s2"), pts: raw, width: 1, dots: false, tol: 0 },
+    ];
+    renderLegend(card.querySelector("[data-legend]"), series);
+    lineChart(card.querySelector("[data-chart]"), series.slice().reverse(),
+      { yFmt: (v, d) => v.toFixed(d) + "%", tipFmt: pctFmt, label: "Percentage with respiratory symptoms", primary: 1 });
+    const maBy = new Map(all.ma.map(p => [p.t, p.v]));
+    renderTable(card.querySelector("[data-table]"), ["Date", "Daily %", "7-day avg %"],
+      raw.slice().reverse().map(p => [fmtDate(p.t), pctFmt(p.v), maBy.has(p.t) ? pctFmt(maBy.get(p.t)) : "–"]));
+  }
+  function drawVariants(){
+    const card = document.getElementById("c-var"), all = state.data.variants;
+    if (!all) return;
+    const c = cutoff();
+    const from = c === -Infinity ? c : Date.UTC(new Date(c).getUTCFullYear(), new Date(c).getUTCMonth(), 1);
+    const months = all.filter(m => m.t >= from);
+    // up to 7 named lineages with the most samples in view; the rest folds into Other
+    const tot = new Map();
+    for (const m of months) for (const [k, v] of m.counts) if (k !== "Other") tot.set(k, (tot.get(k) || 0) + v);
+    const top = [...tot.entries()].sort((a, b) => b[1] - a[1]).slice(0, 7).map(e => e[0]);
+    // colour by first appearance so a lineage keeps its slot order through time
+    const firstSeen = (k) => months.findIndex(m => m.counts.get(k) > 0);
+    top.sort((a, b) => firstSeen(a) - firstSeen(b) || a.localeCompare(b));
+    const keys = top.map((name, i) => ({ name, color: css(SLOTS[i]) }));
+    keys.push({ name: "Other", color: css("--other") });
+    const cats = months.map(m => {
+      const shares = {}; let other = 0;
+      for (const [k, v] of m.counts) { if (top.includes(k)) shares[k] = v / m.den; else other += v; }
+      shares.Other = other / m.den;
+      return { t: m.t, n: m.n, shares };
+    });
+    renderLegend(card.querySelector("[data-legend]"), keys, true);
+    stackChart(card.querySelector("[data-chart]"), cats, keys);
+    renderTable(card.querySelector("[data-table]"), ["Month", "n", ...keys.map(k => k.name)],
+      cats.slice().reverse().map(ct => [fmtMonth(ct.t), String(ct.n), ...keys.map(k => Math.round((ct.shares[k.name] || 0) * 100) + "%")]));
+  }
+  function drawPlant(){
+    const card = document.getElementById("c-plant");
+    if (!state.plants || !state.plantCode) return;
+    const p = state.plants.get(state.plantCode), c = cutoff();
+    const pts = p.pts.filter(q => q.t >= c);
+    const nat = (state.data.sewage || []).filter(q => q.t >= c);
+    const series = [
+      { name: p.name, color: css("--s1"), pts, maxGap: 21 * DAY, tol: 3 * DAY },
+      { name: "National average", color: css("--s2"), pts: nat, width: 1.5, dots: false, maxGap: 9 * DAY, tol: 3 * DAY },
+    ];
+    renderLegend(card.querySelector("[data-legend]"), series);
+    lineChart(card.querySelector("[data-chart]"), series, { yFmt: sewageFmt, tipFmt: (v) => sewageFmt(v) + " × 10¹¹", label: "Sewage virus load at " + p.name });
+    renderTable(card.querySelector("[data-table]"), ["Date", p.name + " × 10¹¹ / 100k"], pts.slice().reverse().map(q => [fmtDate(q.t), sewageFmt(q.v)]));
+  }
+  function drawAll(){ drawSewage(); drawPos(); drawAri(); drawVariants(); drawPlant(); }
+
+  // ---------- plants ----------
+  async function loadPlants(){
+    const btn = document.getElementById("plantload"), sel = document.getElementById("plantsel");
+    btn.disabled = true; btn.textContent = "Loading…";
+    try {
+      const rows = await load("plants");
+      const map = new Map();
+      for (const r of rows) {
+        const v = num(r.RNA_flow_per_100000); if (!isFinite(v)) continue;
+        if (!map.has(r.RWZI_AWZI_code)) map.set(r.RWZI_AWZI_code, { name: r.RWZI_AWZI_name, pts: [] });
+        map.get(r.RWZI_AWZI_code).pts.push({ t: day(r.Date_measurement), v });
+      }
+      let latest = 0;
+      for (const p of map.values()) { p.pts.sort((a, b) => a.t - b.t); p.last = p.pts[p.pts.length - 1].t; latest = Math.max(latest, p.last); }
+      state.plants = map;
+      const active = [], stopped = [];
+      for (const [code, p] of map) (p.last >= latest - 45 * DAY ? active : stopped).push([code, p]);
+      const byName = (a, b) => a[1].name.localeCompare(b[1].name, "nl");
+      sel.replaceChildren();
+      for (const [label, list] of [["Measured in the last 45 days", active], ["No recent measurements", stopped]]) {
+        const og = document.createElement("optgroup"); og.label = label;
+        for (const [code, p] of list.sort(byName)) {
+          const o = document.createElement("option"); o.value = code;
+          o.textContent = p.name + (list === stopped ? " (until " + fmtMonth(p.last) + ")" : "");
+          og.appendChild(o);
+        }
+        sel.appendChild(og);
+      }
+      let pick = null;
+      try { pick = localStorage.getItem("covidnl.plant"); } catch (e) {}
+      if (!pick || !map.has(pick)) pick = [...map.keys()].find(k => map.get(k).name === "Utrecht") || active[0]?.[0];
+      sel.value = pick; state.plantCode = pick;
+      btn.hidden = true; sel.hidden = false;
+      drawPlant();
+    } catch (e) {
+      btn.disabled = false; btn.textContent = "Retry loading per-plant data";
+      document.getElementById("c-plant").querySelector("[data-chart]").replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: "Could not load: " + e.message }));
+    }
+  }
+  document.getElementById("plantload").addEventListener("click", loadPlants);
+  document.getElementById("plantsel").addEventListener("change", (e) => {
+    state.plantCode = e.target.value;
+    try { localStorage.setItem("covidnl.plant", state.plantCode); } catch (err) {}
+    drawPlant();
+  });
+
+  // ---------- controls ----------
+  const rangeEl = document.getElementById("range");
+  function syncRange(){ for (const b of rangeEl.querySelectorAll("button")) b.setAttribute("aria-pressed", String(+b.dataset.m === state.months)); }
+  rangeEl.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    state.months = +b.dataset.m; syncRange();
+    try { localStorage.setItem("covidnl.months", String(state.months)); } catch (err) {}
+    drawAll();
+  });
+  syncRange();
+  let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 150); });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", drawAll);
+
+  // ---------- boot ----------
+  async function boot(){
+    const status = document.getElementById("status");
+    const jobs = {
+      sewage: load("sewage").then(r => { state.data.sewage = sewageSeries(r); state.report = r[0]?.Date_of_report; drawSewage(); drawPlant(); }),
+      pos: load("pos").then(r => { state.data.pos = simpleSeries(r, "Date_of_statistics", "Perc_covid_test_positive"); drawPos(); }),
+      ari: load("ari").then(r => { const raw = simpleSeries(r, "Date_of_statistics", "Perc_ARI_symptoms"); state.data.ari = { raw, ma: movingAvg(raw, 7) }; drawAri(); }),
+      variants: load("variants").then(r => { state.data.variants = variantMonths(r); drawVariants(); }),
+    };
+    const res = await Promise.allSettled(Object.values(jobs));
+    const failed = res.map((r, i) => r.status === "rejected" ? Object.keys(jobs)[i] : null).filter(Boolean);
+    if (failed.length) {
+      status.classList.add("err");
+      status.textContent = "Could not load: " + failed.join(", ") + ". RIVM's server may be down; try again later.";
+    } else {
+      status.textContent = "RIVM data published " + (state.report ? fmtDate(day(state.report)) : "recently");
+    }
+  }
+  boot();
+})();
+</script>
+</body>
+</html>
