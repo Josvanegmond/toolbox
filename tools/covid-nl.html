@@ -187,9 +187,16 @@
   .map circle.st{ cursor:pointer; }
   .map circle.st.sel{ stroke:var(--ink); stroke-width:10; }
   .mapside{ display:flex; flex-direction:column; gap:12px; font-size:12px; color:var(--muted); min-width:0; }
+  .scale{ position:relative; }
   .scale .cap{ color:var(--ink); font-weight:600; }
+  .scale .capline{ display:flex; align-items:center; gap:6px; }
+  .scale .helppop{ top:24px; right:0; }
+  @media (min-width:760px){ .scale .helppop{ top:0; right:calc(100% + 12px); } }
   .scale .bar{ height:10px; border-radius:3px; border:1px solid var(--line); margin:5px 0 2px; }
   .scale .ticks{ display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
+  .steplist{ display:grid; grid-auto-flow:column; grid-template-columns:repeat(2, max-content); gap:3px 18px; margin-top:6px; font-variant-numeric:tabular-nums; }
+  .steplist span{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .steplist i{ width:13px; height:13px; border-radius:2px; border:1px solid var(--line); flex:none; }
   .keys{ display:grid; grid-template-columns:repeat(2, minmax(0, max-content)); gap:4px 14px; margin-top:8px; }
   .keys span{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; }
   .keys i{ width:11px; height:11px; flex:none; }
@@ -482,6 +489,9 @@
       col_updated: "Bijgewerkt", col_2: "≤ 2 wk", col_3: "≤ 3 wk", col_4: "≤ 4 wk",
       aria_pv: "{name}: {value}, {n} van {N} stations deze week bijgewerkt",
       play: "Afspelen", pause: "Pauzeren", map_aria: "Kaart van virus in rioolwater per regio",
+      scale_help_aria: "Waarom deze kleurgrenzen?",
+      scale_help_growth: "<p class=\"lead\">De schaal is gekozen tot maximaal <b>+50% per week</b>. Ongeveer 10% van alle weken in het afgelopen jaar groeide zo snel.</p>",
+      scale_help_level: "<p class=\"lead\">Stappen van 100 (× 10¹¹ per 100.000 inwoners); <b>1.000 of meer</b> is het donkerst. Dat haalde ongeveer 1% van alle weken in het afgelopen jaar, en 17% sinds 2020.</p>",
     },
     en: {
       eyebrow: "RIVM open data",
@@ -549,6 +559,9 @@
       col_updated: "Updated", col_2: "≤ 2 wk", col_3: "≤ 3 wk", col_4: "≤ 4 wk",
       aria_pv: "{name}: {value}, {n} of {N} stations updated this week",
       play: "Play", pause: "Pause", map_aria: "Map of sewage virus by region",
+      scale_help_aria: "Why these colour limits?",
+      scale_help_growth: "<p class=\"lead\">The scale was chosen with <b>+50% a week</b> as its maximum. About 10% of all weeks in the past year grew this fast.</p>",
+      scale_help_level: "<p class=\"lead\">Steps of 100 (× 10¹¹ per 100,000 inhabitants); <b>1,000 or more</b> is darkest. About 1% of all weeks in the past year reached that, and 17% since 2020.</p>",
     },
   };
   let i18n = null;
@@ -965,23 +978,41 @@
 
   const WEEK = 7 * DAY;
   const mondayOf = (t) => t - ((new Date(t).getUTCDay() + 6) % 7) * DAY;
-  // white -> orange -> red; the same stops draw the legend
-  const RAMP = [[0, [255,255,255]], [0.25, [253,219,176]], [0.5, [246,152,60]], [0.75, [226,87,43]], [1, [178,24,32]]];
-  function rampColor(x){
+  // growth: white -> purple; level: white -> orange -> red. The same stops draw the legend
+  const RAMPS = {
+    growth: [[0, [255,255,255]], [0.25, [232,221,245]], [0.5, [191,160,226]], [0.75, [139,93,196]], [1, [84,39,143]]],
+    level: [[0, [255,255,255]], [0.25, [253,219,176]], [0.5, [246,152,60]], [0.75, [226,87,43]], [1, [178,24,32]]],
+  };
+  function rampColor(ramp, x){
     x = Math.max(0, Math.min(1, x));
-    for (let i = 1; i < RAMP.length; i++) {
-      const [p1, c1] = RAMP[i], [p0, c0] = RAMP[i - 1];
+    for (let i = 1; i < ramp.length; i++) {
+      const [p1, c1] = ramp[i], [p0, c0] = ramp[i - 1];
       if (x <= p1) { const f = (x - p0) / (p1 - p0); return "rgb(" + c0.map((c, k) => Math.round(c + (c1[k] - c) * f)).join(",") + ")"; }
     }
   }
-  const rampCss = () => "linear-gradient(to right," + RAMP.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
+  const rampCss = (ramp) => "linear-gradient(to right," + ramp.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
+  const LEVEL_STEPS = 11;
+  const levelStep = (v) => Math.max(0, Math.min(LEVEL_STEPS - 1, Math.floor(v / 1e11 / 100)));
+  // legend background: a smooth gradient, or hard-edged blocks for a stepped scale
+  function legendCss(mode){
+    const ramp = RAMPS[mapState.mode];
+    if (!mode.steps) return rampCss(ramp);
+    const w = 100 / mode.steps, stops = [];
+    for (let i = 0; i < mode.steps; i++) {
+      const c = rampColor(ramp, i / (mode.steps - 1));
+      stops.push(`${c} ${(i * w).toFixed(3)}%`, `${c} ${((i + 1) * w).toFixed(3)}%`);
+    }
+    return "linear-gradient(to right," + stops.join(",") + ")";
+  }
   const pctFmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "%";
   const MODES = {
     // growth: 0%/week or less is white, +25% orange, +50% or more red
-    growth: { color: (g) => rampColor(g / 50), ticks: () => ["≤ 0%", "+25%", "≥ +50%"], caption: () => t("cap_growth"),
+    growth: { color: (g) => rampColor(RAMPS.growth, g / 50), ticks: () => ["≤ 0%", "+25%", "≥ +50%"], caption: () => t("cap_growth"),
       fmt: (g) => pctFmtSigned(g) + " " + t("per_week") },
-    // level: log scale from 10 to 1,000 × 10¹¹
-    level: { color: (v) => rampColor((Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: () => ["≤ 10", "100", "≥ " + f0.format(1000)], caption: () => t("cap_level"),
+    // level: linear, see LEVEL_STEPS
+    // level: 11 steps of 100 × 10¹¹ (0–100 … 900–1,000, then 1,000+), shaded along the same ramp
+    level: { steps: LEVEL_STEPS, color: (v) => rampColor(RAMPS.level, levelStep(v) / (LEVEL_STEPS - 1)),
+      caption: () => t("cap_level"),
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
   const mapState = { mode: "growth", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
@@ -1092,11 +1123,43 @@
     mapState.legendKey = key;
     const mode = MODES[mapState.mode], scale = document.querySelector("#c-map [data-scale]");
     scale.replaceChildren();
-    scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: mode.caption() }));
-    const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = rampCss(); scale.appendChild(bar);
-    const ticks = document.createElement("div"); ticks.className = "ticks";
-    for (const x of mode.ticks()) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: x }));
-    scale.appendChild(ticks);
+    const cap = document.createElement("div"); cap.className = "cap capline";
+    const info = document.createElement("button");
+    info.type = "button"; info.className = "infobtn"; info.textContent = "i";
+    info.setAttribute("aria-label", t("scale_help_aria")); info.setAttribute("aria-expanded", "false");
+    const pop = document.createElement("div"); pop.className = "helppop"; pop.hidden = true; pop.id = "scalehelp";
+    pop.setAttribute("role", "tooltip"); info.setAttribute("aria-describedby", "scalehelp");
+    pop.innerHTML = t(mapState.mode === "growth" ? "scale_help_growth" : "scale_help_level");
+    cap.append(document.createTextNode(mode.caption()), info);
+    scale.append(cap, pop);
+    // hover or focus shows the help; a click pins it until the next click, Escape or a click elsewhere
+    let pinned = false;
+    const show = (on) => { pop.hidden = !on; info.setAttribute("aria-expanded", String(on)); };
+    info.addEventListener("pointerenter", () => show(true));
+    info.addEventListener("pointerleave", () => { if (!pinned) show(false); });
+    info.addEventListener("focus", () => show(true));
+    info.addEventListener("blur", () => { if (!pinned) show(false); });
+    info.addEventListener("click", (e) => { e.stopPropagation(); pinned = !pinned; show(pinned); });
+    document.addEventListener("click", (e) => { if (pinned && !pop.contains(e.target)) { pinned = false; show(false); } });
+    info.addEventListener("keydown", (e) => { if (e.key === "Escape") { pinned = false; show(false); } });
+    if (mode.steps) {
+      // one square per step with its range, like RIVM's own map legends
+      const list = document.createElement("div"); list.className = "steplist";
+      list.style.gridTemplateRows = `repeat(${Math.ceil(mode.steps / 2)}, auto)`;
+      for (let i = 0; i < mode.steps; i++) {
+        const row = document.createElement("span"), sq = document.createElement("i");
+        sq.style.background = rampColor(RAMPS[mapState.mode], i / (mode.steps - 1));
+        const label = i === mode.steps - 1 ? f0.format(i * 100) + "+" : f0.format(i * 100) + "–" + f0.format((i + 1) * 100);
+        row.append(sq, document.createTextNode(label));
+        list.appendChild(row);
+      }
+      scale.appendChild(list);
+    } else {
+      const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = legendCss(mode); scale.appendChild(bar);
+      const ticks = document.createElement("div"); ticks.className = "ticks";
+      for (const x of mode.ticks()) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: x }));
+      scale.appendChild(ticks);
+    }
     scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: t("last_updated"), style: "margin-top:10px" }));
     const keys = document.createElement("div"); keys.className = "keys";
     for (const a of [...AGES, { key: "older", old: true }, { key: "no_data", sq: true }]) {
