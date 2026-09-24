@@ -370,6 +370,33 @@
   </footer>
 </div>
 
+<dialog id="aboutModal" class="tbmodal">
+  <div class="modal-inner">
+    <div class="modal-head">
+      <h2 data-i18n="about_title"></h2>
+      <button type="button" class="modal-close" id="closeAbout" data-i18n="close"></button>
+    </div>
+    <p data-i18n-html="about_made"></p>
+    <p data-i18n-html="about_disclaimer"></p>
+    <p data-i18n-html="about_translation"></p>
+    <div class="modal-section-title" data-i18n="about_sources"></div>
+    <ul class="srclist">
+      <li><span class="srctitle">RIVM &ndash; <a href="https://data.rivm.nl/covid-19/" target="_blank" rel="noopener">COVID-19 open data</a></span>
+        <span class="srcnote" data-i18n="src_rivm"></span></li>
+      <li><span class="srctitle">CBS &ndash; <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">Inwoners per rioolwaterzuiveringsinstallatie, 1-1-2024</a></span>
+        <span class="srcnote" data-i18n="src_cbs_rwzi"></span></li>
+      <li><span class="srctitle">CBS &ndash; <a href="https://opendata.cbs.nl/statline/#/CBS/nl/dataset/85755NED" target="_blank" rel="noopener">Gebieden in Nederland 2024</a></span>
+        <span class="srcnote" data-i18n="src_cbs_areas"></span></li>
+      <li><span class="srctitle">PDOK &ndash; <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">CBS gebiedsindelingen</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-postcode4" target="_blank" rel="noopener">CBS postcode 4</a></span>
+        <span class="srcnote" data-i18n="src_pdok"></span></li>
+      <li><span class="srctitle">Rijkswaterstaat / PDOK &ndash; <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">Richtlijn Stedelijk Afvalwater</a></span>
+        <span class="srcnote" data-i18n="src_rws"></span></li>
+    </ul>
+    <div class="modal-section-title" data-i18n="contact"></div>
+    <p><a href="mailto:joozey@protonmail.com">joozey@protonmail.com</a></p>
+  </div>
+</dialog>
+
 <script src="shared/toolbox.js"></script>
 <script>
 (() => {
@@ -392,8 +419,18 @@
     nl: {
       eyebrow: "RIVM open data",
       h1: "COVID-19 in Nederland",
-      intro: "Rioolwatermetingen, Infectieradar en variantgegevens voor Nederland, live opgehaald bij het RIVM. Alle COVID-gegevens komen van het RIVM; kaartvormen en stationslocaties van CBS, PDOK en Rijkswaterstaat. Deze pagina is gemaakt met Claude Opus 5.5 (high).",
-      disclaimer: "<b>Alleen voor educatieve doeleinden.</b> Deze pagina is geen medisch advies. Er kunnen geen aansprakelijkheidsclaims worden ingediend voor gevolgen van handelingen op basis van de informatie op deze pagina. Vertalingen kunnen fouten bevatten en gebruiken mogelijk niet de juridisch juiste termen.",
+      intro: "Rioolwatermetingen, Infectieradar en variantgegevens voor Nederland, live opgehaald bij het RIVM. Alle COVID-gegevens komen van het RIVM; kaartvormen en stationslocaties van CBS, PDOK en Rijkswaterstaat.",
+      disclaimer: 'Gemaakt met behulp van <b>Claude Opus 5.5 (high)</b>. Alleen voor educatieve doeleinden; geen medisch advies. <a href="#" data-open-about>Lees meer</a>.',
+      about_title: "Over deze pagina", close: "Sluiten",
+      about_made: "Gemaakt met behulp van <b>Claude Opus 5.5 (high)</b> (Anthropic), niet gelieerd aan het RIVM, CBS, PDOK of Rijkswaterstaat. De pagina zelf draait geen taalmodel: hij haalt de cijfers live op bij het RIVM en rekent ze met vaste regels om naar grafieken en kaarten.",
+      about_disclaimer: "<b>Alleen voor educatieve doeleinden.</b> Deze pagina is geen medisch advies. Er kunnen geen aansprakelijkheidsclaims worden ingediend voor gevolgen van handelingen op basis van de informatie op deze pagina.",
+      about_translation: "De <b>vertalingen</b> zijn een hulpmiddel: ze kunnen fouten bevatten en gebruiken mogelijk niet de juridisch juiste termen. Ga bij twijfel uit van de originele bronnen.",
+      about_sources: "Gebruikte bronnen",
+      src_rivm: "Alle COVID-cijfers: rioolwater (landelijk en per station), Infectieradar en varianten. Live opgehaald.",
+      src_cbs_rwzi: "Welke inwoners elk rioolwaterstation bedient, per gemeente en postcode. Gebruikt voor provincies en verzorgingsgebieden.",
+      src_cbs_areas: "Welke gemeente in welke provincie ligt.",
+      src_pdok: "Provinciegrenzen en postcodegebieden voor de kaart.",
+      src_rws: "Locaties van de rioolwaterstations.",
       range_aria: "Periode", r3: "3 mnd", r6: "6 mnd", r12: "1 jr", r24: "2 jr", rall: "Alles",
       table: "Tabel", method: "Methode", stats: "Cijfers", source: "Bron", sources: "Bronnen",
       sew_h: "Virus in rioolwater, landelijk", sew_sub: "RNA-deeltjes per 100.000 inwoners",
@@ -449,8 +486,18 @@
     en: {
       eyebrow: "RIVM open data",
       h1: "COVID-19 in the Netherlands",
-      intro: "Sewage surveillance, Infectieradar and variant data for the Netherlands, fetched live from RIVM. All COVID data comes from RIVM; map shapes and station locations from CBS, PDOK and Rijkswaterstaat. This page was created with Claude Opus 5.5 (high).",
-      disclaimer: "<b>For educational purposes only.</b> This page is not medical advice. No liability claims can be made for any consequences of actions taken based on the information on this page. Translations may contain errors and may not use the legally correct terms.",
+      intro: "Sewage surveillance, Infectieradar and variant data for the Netherlands, fetched live from RIVM. All COVID data comes from RIVM; map shapes and station locations from CBS, PDOK and Rijkswaterstaat.",
+      disclaimer: 'Made with the help of <b>Claude Opus 5.5 (high)</b>. For educational purposes only; not medical advice. <a href="#" data-open-about>Read more</a>.',
+      about_title: "About this page", close: "Close",
+      about_made: "Made with the help of <b>Claude Opus 5.5 (high)</b> (Anthropic), not affiliated with RIVM, CBS, PDOK or Rijkswaterstaat. The page itself runs no language model: it fetches the figures live from RIVM and turns them into charts and maps with fixed rules.",
+      about_disclaimer: "<b>For educational purposes only.</b> This page is not medical advice. No liability claims can be made for any consequences of actions taken based on the information on this page.",
+      about_translation: "The <b>translations</b> are a convenience: they may contain errors and may not use the legally correct terms. When in doubt, go by the original sources.",
+      about_sources: "Sources used",
+      src_rivm: "All COVID figures: sewage (national and per station), Infectieradar and variants. Fetched live.",
+      src_cbs_rwzi: "Which residents each sewage station serves, per municipality and postcode. Used for provinces and catchment areas.",
+      src_cbs_areas: "Which municipality lies in which province.",
+      src_pdok: "Province boundaries and postcode areas for the map.",
+      src_rws: "Locations of the sewage stations.",
       range_aria: "Time range", r3: "3 mo", r6: "6 mo", r12: "1 yr", r24: "2 yr", rall: "All",
       table: "Table", method: "Method", stats: "Stats", source: "Source", sources: "Sources",
       sew_h: "Virus in sewage, national", sew_sub: "RNA particles per 100,000 inhabitants",
@@ -1340,6 +1387,12 @@
   });
   syncRange();
   let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 150); });
+
+  // "Read more" in the banner opens the About dialog; the link is re-rendered on a language change, so delegate
+  const about = document.getElementById("aboutModal");
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-open-about]")) { e.preventDefault(); about.showModal(); } });
+  document.getElementById("closeAbout").addEventListener("click", () => about.close());
+  about.addEventListener("click", (e) => { if (e.target === about) about.close(); });
 
   // charts read theme colours and texts when drawn, so redraw everything (the map from scratch)
   function redrawAll(){

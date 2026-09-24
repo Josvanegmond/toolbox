@@ -343,32 +343,6 @@
   .lawcard dt{ color:var(--muted); font-weight:600; }
   .lawcard dd{ margin:0; }
 
-  dialog#sourcesModal{
-    max-width: 620px;
-    width: calc(100% - 40px);
-    border:1px solid var(--line);
-    border-radius:16px;
-    padding:0;
-    background:var(--surface);
-    color:var(--ink);
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.4);
-  }
-  dialog#sourcesModal::backdrop{ background:rgba(10,14,10,0.55); }
-  .modal-inner{ padding:24px 26px 22px; max-height:80vh; overflow-y:auto; }
-  .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:14px; }
-  .modal-head h2{ font-size:20px; }
-  .modal-close{
-    font:inherit; font-size:13px; font-weight:700;
-    border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
-    border-radius:8px; padding:5px 10px; cursor:pointer; flex:none;
-  }
-  .modal-close:hover{ border-color:var(--accent); color:var(--accent); }
-  .srclist{ list-style:none; margin:14px 0 0; padding:0; display:flex; flex-direction:column; gap:12px; }
-  .srclist li{ font-size:13.5px; padding-bottom:12px; border-bottom:1px solid var(--line); }
-  .srclist li:last-child{ border-bottom:none; padding-bottom:0; }
-  .srclist .srctitle{ font-weight:700; display:block; margin-bottom:2px; }
-  .srclist .srcnote{ color:var(--muted); font-size:12.5px; }
-  .modal-section-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin:18px 0 4px; }
 </style>
 </head>
 <body>
@@ -756,7 +730,7 @@
 
 <div id="tipPopover" role="tooltip" hidden></div>
 
-<dialog id="sourcesModal">
+<dialog id="sourcesModal" class="tbmodal">
   <div class="modal-inner">
     <div class="modal-head">
       <h2 data-i18n="modal_title">Bronnen &amp; hulp</h2>
