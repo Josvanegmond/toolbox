@@ -163,6 +163,10 @@
   }
   .btn{ cursor:pointer; font-weight:600; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   .btn:disabled{ opacity:.6; cursor:progress; }
+  .linkbtn{ font:inherit; font-size:13px; color:var(--accent); background:none; border:0; padding:4px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .linkbtn:hover{ color:var(--ink); }
+  .linkbtn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  .linkbtn:disabled{ color:var(--muted); text-decoration:none; cursor:progress; }
 
   .maptools{ display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center; margin:2px 0 10px; }
   .mapwrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:12px 18px; }
@@ -175,7 +179,8 @@
   .map path.ca:hover{ stroke:var(--ink); stroke-opacity:1; stroke-width:1.6; }
   .map svg.catch-mode path.pv{ fill:none; pointer-events:none; stroke:var(--ink); stroke-opacity:.55; stroke-width:1.3; }
   .map text{ pointer-events:none; font-weight:600; fill:#1b1b1b; paint-order:stroke; stroke:rgba(255,255,255,.8); stroke-linejoin:round; }
-  .map circle.st{ cursor:default; }
+  .map circle.st{ cursor:pointer; }
+  .map circle.st.sel{ stroke:var(--ink); stroke-width:10; }
   .mapside{ display:flex; flex-direction:column; gap:12px; font-size:12px; color:var(--muted); min-width:0; }
   .scale .cap{ color:var(--ink); font-weight:600; }
   .scale .bar{ height:10px; border-radius:3px; border:1px solid var(--line); margin:5px 0 2px; }
@@ -186,11 +191,15 @@
   .keys i.sq{ border-radius:2px; background:var(--nodata); }
   .keys i.dot{ border-radius:50%; border:1.5px solid #ffffff; box-shadow:0 0 0 1px rgba(0,0,0,.25); }
   .keys i.dot.old{ background:transparent; border-color:#8b8a84; box-shadow:none; width:9px; height:9px; }
-  table.kv{ width:100%; table-layout:fixed; font-size:12px; }
-  table.kv td, table.kv th{ padding:3px 0; border:0; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  table.kv th{ font-weight:400; color:var(--muted); width:42%; }
+  table.kv{ width:auto; font-size:12px; }
+  table.kv td, table.kv th{ padding:4px 10px; text-align:left; white-space:nowrap; }
+  table.kv th{ font-weight:400; color:var(--muted); background:none; position:static; }
+  /* fixed width so the open panel does not resize while the slider moves */
+  details.stats .tblwrap{ width:17em; max-width:100%; }
   table.kv td{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
   .timeline{ display:flex; align-items:center; gap:10px; margin-top:6px; }
+  .timeline[hidden]{ display:none; }
+  .map .empty{ min-height:240px; }
   .timeline input{ flex:1; min-width:0; accent-color:var(--accent); }
   .timeline output{ font-size:13px; font-weight:600; width:6.6em; flex:none; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .play{ font:inherit; font-size:13px; width:34px; height:34px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
@@ -211,7 +220,7 @@
   <header>
     <span class="eyebrow"><a href="../index.html">Toolbox</a> · RIVM open data</span>
     <h1>COVID-19 in the Netherlands</h1>
-    <p>Live RIVM open data · updated Wednesdays</p>
+    <p>Sewage surveillance, Infectieradar and variant data for the Netherlands, fetched live from RIVM. All COVID data comes from RIVM; map shapes and station locations from CBS, PDOK and Rijkswaterstaat. This page was created with Claude Opus 5.5 (high).</p>
   </header>
 
   <div class="controls">
@@ -252,11 +261,10 @@
           <button type="button" data-mode="growth" aria-pressed="true">Growth</button>
           <button type="button" data-mode="level" aria-pressed="false">Level</button>
         </div>
-        <button class="btn" type="button" id="maploadbtn" data-plantload>Load map data (≈ 10 MB)</button>
       </div>
       <div class="mapwrap">
         <div>
-          <div class="map" data-map><div class="empty">Map data loads on request.</div></div>
+          <div class="map" data-map><div class="empty"><button type="button" class="linkbtn" id="maploadbtn" data-plantload>Click here to load the dataset (≈ 10 MB)</button></div></div>
           <div class="timeline" data-timeline hidden>
             <button type="button" class="play" id="mapplay" aria-label="Play">▶</button>
             <input type="range" id="mapweek" min="0" max="0" value="0" aria-label="Week">
@@ -265,11 +273,11 @@
         </div>
         <div class="mapside">
           <div class="scale" data-scale></div>
-          <table class="kv" data-stats></table>
         </div>
       </div>
       <div class="foot"><span class="links">
           <details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+          <details class="tbl stats"><summary>Stats</summary><div class="tblwrap"><table class="kv" data-stats></table></div></details>
           <details class="tbl method"><summary>Method</summary><div class="tblwrap"><table><tbody>
             <tr><td>Growth</td><td>4-week trend, % per week (straight-line fit on log of weekly level)</td></tr>
             <tr><td>Level</td><td>Mean of stations that reported that week</td></tr>
@@ -282,6 +290,18 @@
             <tr><td>Left out</td><td>4 Gelderland stations closed 2020–21 (dots only)</td></tr>
           </tbody></table></div></details></span>
         <span>Sources: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK</a>, <a href="https://www.pdok.nl/ogc-webservices/-/article/kaderrichtlijn-stedelijk-afvalwater" target="_blank" rel="noopener">RWS</a></span></div>
+    </section>
+
+    <section class="card" id="c-plant">
+      <h2>Virus in sewage, per station</h2>
+      <p class="sub">One station vs national · click a station or catchment area on the map to select it</p>
+      <div class="plantbar">
+        <select id="plantsel" hidden aria-label="Sewage station"></select>
+      </div>
+      <div class="legend" data-legend></div>
+      <div class="chart tall" data-chart><div class="empty"><button type="button" class="linkbtn" id="plantload" data-plantload>Click here to load the dataset (≈ 10 MB)</button></div></div>
+      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
 
     <div class="grid two">
@@ -322,22 +342,11 @@
         <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/4678ae0b-2580-4cdb-a50b-d229575269ae" target="_blank" rel="noopener">RIVM</a></span></div>
     </section>
 
-    <section class="card" id="c-plant">
-      <h2>Virus in sewage, per station</h2>
-      <p class="sub">One station vs national</p>
-      <div class="plantbar">
-        <button class="btn" type="button" id="plantload" data-plantload>Load station data (≈ 10 MB)</button>
-        <select id="plantsel" hidden aria-label="Sewage station"></select>
-      </div>
-      <div class="legend" data-legend></div>
-      <div class="chart tall" data-chart><div class="empty">Station data loads on request.</div></div>
-      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
-        <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a></span></div>
-    </section>
   </div>
 
   <footer>
     <p>Data: <a href="https://data.rivm.nl/covid-19/" target="_blank" rel="noopener">RIVM</a>, CBS, PDOK · public domain · <a href="https://github.com/Josvanegmond/toolbox" target="_blank" rel="noopener">Source on GitHub</a></p>
+    <p>Questions or suggestions: <a href="mailto:joozey@protonmail.com">joozey@protonmail.com</a></p>
   </footer>
 </div>
 
@@ -933,6 +942,7 @@
         const c = el("circle", { class: "st", cx: xy[0], cy: xy[1], r: R, "data-code": code }, dots);
         c.addEventListener("pointerenter", () => stationTip(code));
         c.addEventListener("pointerleave", hideMapTip);
+        c.addEventListener("click", () => selectStation(code));
       }
       GEO.provinces.forEach((p) => {
         const t = el("text", { x: p.lx, y: p.ly, "text-anchor": "middle", "dominant-baseline": "middle", "font-size": Math.round(GEO.w / 48), "stroke-width": Math.round(GEO.w / 360) }, svg);
@@ -947,6 +957,7 @@
         const path = el("path", { d, class: "ca", "data-code": code }, cg);
         path.addEventListener("pointerenter", () => stationTip(code));
         path.addEventListener("pointerleave", hideMapTip);
+        path.addEventListener("click", () => selectStation(code));
       }
     }
     svg.classList.toggle("catch-mode", catchMode);
@@ -978,9 +989,12 @@
         c.setAttribute("stroke", "#8b8a84"); c.setAttribute("stroke-width", R * 0.35);
       }
     }
-    // recently updated stations on top where dots overlap
+    // recently updated stations on top where dots overlap; the selected station above all
     const g = svg.querySelector("g.stations");
     for (const c of [...g.children].sort((a, b) => (+b.dataset.age || 0) - (+a.dataset.age || 0))) g.appendChild(c);
+    for (const c of g.children) c.classList.toggle("sel", c.dataset.code === state.plantCode);
+    const selDot = g.querySelector("circle.sel");
+    if (selDot) { g.appendChild(selDot); selDot.setAttribute("r", R * 1.25); }
 
     document.getElementById("mapweeklabel").textContent = fmtDate(mapState.weeks[wi]);
     document.getElementById("mapweek").value = String(wi);
@@ -994,10 +1008,9 @@
     } else {
       items = GEO.provinces.map((p, i) => ({ name: p.name, g: mapState.growth[i][wi], lv: mapState.level[i][wi], u: mapState.updated[i][wi], N: mapState.stationsTotal[i] }));
     }
-    const known = items.filter(x => x.g != null), top = known.slice().sort((a, b) => b.g - a.g)[0];
+    const known = items.filter(x => x.g != null);
     drawStats([
       ["Rising", known.length ? known.filter(x => x.g > 0).length + " / " + known.length + (catchMode ? " areas" : " provinces") : "–"],
-      ["Fastest", top && top.g > 0 ? top.name + " " + pctFmtSigned(top.g) : "–"],
       ["Updated", upd[0] + " / " + N + " stations"],
       ["≤ 2 weeks", upd[1] + " / " + N],
       ["≤ 3 weeks", upd[2] + " / " + N],
@@ -1043,6 +1056,17 @@
   }
   function hideMapTip(){ const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none"; }
 
+  // clicking a station or catchment area shows that station in the chart below the map
+  function selectStation(code){
+    if (!state.plants || !state.plants.has(code)) return;
+    state.plantCode = code;
+    document.getElementById("plantsel").value = code;
+    try { localStorage.setItem("covidnl.plant", code); } catch (e) {}
+    drawPlant(); drawMap();
+    const card = document.getElementById("c-plant"), r = card.getBoundingClientRect();
+    if (r.top > innerHeight - 120 || r.bottom < 0) card.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+  }
+
   function setWeek(wi){ mapState.week = Math.max(minWeek(), Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
   function stopPlay(){ clearInterval(mapState.timer); mapState.timer = null; const b = document.getElementById("mapplay"); b.textContent = "▶"; b.setAttribute("aria-label", "Play"); }
   document.getElementById("mapweek").addEventListener("input", (e) => { stopPlay(); setWeek(+e.target.value); });
@@ -1081,7 +1105,7 @@
   function loadPlants(){ return plantsPromise || (plantsPromise = fetchPlants()); }
   async function fetchPlants(){
     const btns = document.querySelectorAll("[data-plantload]"), sel = document.getElementById("plantsel");
-    for (const b of btns) { b.disabled = true; b.textContent = "Loading…"; }
+    for (const b of btns) { b.disabled = true; b.textContent = "Loading the dataset (≈ 10 MB)…"; }
     try {
       const rows = await load("plants");
       const map = new Map();
@@ -1117,18 +1141,15 @@
       loadCatchments().then(drawMap, () => {});
     } catch (e) {
       plantsPromise = null;
-      for (const b of btns) { b.disabled = false; b.textContent = "Retry loading per-plant data"; }
-      for (const id of ["c-plant", "c-map"]) {
-        const box = document.getElementById(id).querySelector(id === "c-map" ? "[data-map]" : "[data-chart]");
-        box.replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: "Could not load: " + e.message }));
-      }
+      // keep the link in place so the reader can try again
+      for (const b of btns) { b.disabled = false; b.textContent = "Could not load (" + e.message + "). Click to try again."; }
     }
   }
   for (const b of document.querySelectorAll("[data-plantload]")) b.addEventListener("click", loadPlants);
   document.getElementById("plantsel").addEventListener("change", (e) => {
     state.plantCode = e.target.value;
     try { localStorage.setItem("covidnl.plant", state.plantCode); } catch (err) {}
-    drawPlant();
+    drawPlant(); drawMap();
   });
 
   // ---------- controls ----------
