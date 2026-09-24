@@ -24,6 +24,8 @@
     --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100;
     --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
     --other:#b4b3ad;
+    --nodata:#a3a29c;
+    --mapline:#9d9c95;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -45,6 +47,8 @@
       --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
       --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
       --other:#5c5b57;
+    --nodata:#6e6d68;
+    --mapline:#4a4945;
     }
   }
   :root[data-theme="dark"]{
@@ -66,6 +70,8 @@
     --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500;
     --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
     --other:#5c5b57;
+    --nodata:#6e6d68;
+    --mapline:#4a4945;
   }
 
   *{box-sizing:border-box;}
@@ -158,6 +164,27 @@
   .btn{ cursor:pointer; font-weight:600; background:var(--accent); color:var(--accent-ink); border-color:var(--accent); }
   .btn:disabled{ opacity:.6; cursor:progress; }
 
+  .maptools{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:2px 0 10px; }
+  .mapwrap{ display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
+  @media (min-width:700px){ .mapwrap{ grid-template-columns:minmax(0,1fr) 220px; } }
+  .map{ position:relative; min-height:200px; }
+  .map svg{ display:block; width:100%; height:auto; max-height:520px; }
+  .map path.pv{ stroke:var(--mapline); stroke-width:1; stroke-linejoin:round; vector-effect:non-scaling-stroke; cursor:pointer; }
+  .map path.pv:hover, .map path.pv:focus{ stroke:var(--ink); stroke-width:2; outline:none; }
+  .map text{ pointer-events:none; font-weight:600; fill:#1b1b1b; paint-order:stroke; stroke:rgba(255,255,255,.8); stroke-linejoin:round; }
+  .mapside{ display:flex; flex-direction:column; gap:14px; font-size:12.5px; color:var(--muted); }
+  .scale .bar{ height:12px; border-radius:3px; border:1px solid var(--line); margin:6px 0 3px; }
+  .scale .ticks{ display:flex; justify-content:space-between; font-variant-numeric:tabular-nums; }
+  .scale .nd{ display:flex; align-items:center; gap:6px; margin-top:8px; }
+  .scale .nd i{ width:14px; height:12px; border-radius:2px; border:1px solid var(--line); background:repeating-linear-gradient(45deg, var(--nodata) 0 2px, transparent 2px 5px); }
+  .weekinfo b{ color:var(--ink); font-size:15px; display:block; }
+  .timeline{ display:flex; align-items:center; gap:12px; margin-top:10px; }
+  .timeline input{ flex:1; min-width:0; accent-color:var(--accent); }
+  .timeline output{ font-size:13px; font-weight:600; min-width:9.5em; text-align:right; font-variant-numeric:tabular-nums; }
+  .play{ font:inherit; font-size:13px; width:34px; height:34px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; flex:none; }
+  .play:hover{ border-color:var(--accent); }
+  .play:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
   footer{ margin-top:36px; padding-top:16px; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
   footer a{ color:var(--muted); }
   footer p{ margin:0 0 6px; }
@@ -191,6 +218,33 @@
       <p class="note">Since 7 July 2025 RIVM measures about 133 plants (40%) once a week instead of all plants several times a week, so the curve is coarser from then on.</p>
       <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
         <span>Source: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/800af4a9-2833-4382-a6e5-5c30e1d1947a" target="_blank" rel="noopener">RIVM, rioolwaterdata landelijk</a></span></div>
+    </section>
+
+    <section class="card" id="c-map">
+      <h2>Virus in sewage, per province</h2>
+      <p class="sub" data-mapsub>How fast the virus load in sewage is rising in each province. Drag the slider or press play to step through every week since 2020.</p>
+      <div class="maptools">
+        <div class="seg" role="group" aria-label="Map colour" id="mapmode">
+          <button type="button" data-mode="growth" aria-pressed="true">Growth</button>
+          <button type="button" data-mode="level" aria-pressed="false">Level</button>
+        </div>
+        <button class="btn" type="button" id="maploadbtn" data-plantload>Load map data (≈ 9.8 MB)</button>
+      </div>
+      <div class="mapwrap">
+        <div class="map" data-map><div class="empty">The map is built from per-plant measurements, which load only when you ask for them.</div></div>
+        <div class="mapside">
+          <div class="scale" data-scale></div>
+          <div class="weekinfo" data-weekinfo></div>
+        </div>
+      </div>
+      <div class="timeline" data-timeline hidden>
+        <button type="button" class="play" id="mapplay" aria-label="Play">▶</button>
+        <input type="range" id="mapweek" min="0" max="0" value="0" aria-label="Week">
+        <output id="mapweeklabel" for="mapweek"></output>
+      </div>
+      <p class="note">Each plant counts toward a province in proportion to the residents it serves there (CBS, 1 January 2024). Growth is the trend over the four weeks up to the selected week (a straight-line fit through the log of each weekly level), shown as change per week. The latest week can be incomplete, and RIVM revises recent values. Four Gelderland plants that closed in 2020–21 are not in the CBS table and are left out.</p>
+      <div class="foot"><details class="tbl"><summary>Table</summary><div class="tblwrap" data-table></div></details>
+        <span>Sources: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM per RWZI</a>, <a href="https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024" target="_blank" rel="noopener">CBS inwoners per RWZI</a>, <a href="https://www.pdok.nl/introductie/-/article/cbs-gebiedsindelingen" target="_blank" rel="noopener">PDOK/CBS boundaries</a></span></div>
     </section>
 
     <div class="grid two">
@@ -228,7 +282,7 @@
       <h2>Virus in sewage, per treatment plant</h2>
       <p class="sub">Measurements for one treatment plant (RWZI), compared with the national average</p>
       <div class="plantbar">
-        <button class="btn" type="button" id="plantload">Load per-plant data (≈ 9.8 MB)</button>
+        <button class="btn" type="button" id="plantload" data-plantload>Load per-plant data (≈ 9.8 MB)</button>
         <select id="plantsel" hidden aria-label="Treatment plant"></select>
       </div>
       <div class="legend" data-legend></div>
@@ -647,10 +701,172 @@
   }
   function drawAll(){ drawSewage(); drawPos(); drawAri(); drawVariants(); drawPlant(); }
 
+  // ---------- province map ----------
+  /* GEO:BEGIN generated by scripts/build_map_data.py; do not edit by hand */
+  const GEO = {"w":2645,"h":3124,"provinces":[{"code":"PV22","name":"Drenthe","d":"M2154 396l9 -2l15 5l3 12l5 6l4 -3l11 26l12 -6l5 19l8 2l10 9l11 18l-2 4l5 3l0 8l40 -18l28 2l4 3l133 135l54 75l21 9l-20 48l17 0l3 8l13 15l4 4l5 -2l-2 13l14 0l-14 31l-6 186l-10 12l-44 -14l-6 5l-20 5l-13 -2l-3 -7l-12 -5l-16 -2l-15 5l-9 -3l-13 5l-19 -6l-15 7l-6 -2l-12 4l-10 14l-16 7l2 -14l-3 -2l4 -8l-64 -27l-41 10l-26 22l4 36l-28 -5l-6 -7l-10 13l-8 -2l-5 -4l-2 -10l-3 0l-6 10l-6 -3l-4 6l-5 -1l-8 6l-6 -5l-8 -29l-26 -17l0 -12l-20 4l-1 4l-11 -7l-6 5l-4 -5l-9 -1l-6 -10l-4 2l-14 -10l-10 2l-5 9l-6 -6l-3 1l2 7l-14 -6l4 -6l-8 -7l-25 -69l32 -14l22 -30l-17 -22l-19 -16l-20 -29l58 -41l17 -26l16 -16l31 3l21 20l40 -30l22 -43l-44 -69l3 -37l-42 -15l6 -14l20 7l8 -22l4 -1l11 -51l14 -15l4 -13l23 -11l3 -10l25 -8z","lx":2270,"ly":751},{"code":"PV24","name":"Flevoland","d":"M1666 1077l-1 3l-12 -3l-4 -7l1 -6l11 -2zM1658 800l24 25l4 15l3 -3l17 24l21 0l8 4l40 33l15 40l15 19l-2 8l-12 9l-7 13l22 5l12 11l-13 20l-90 30l-55 2l-65 -5l-9 8l10 12l69 19l35 1l29 31l5 7l-3 43l-24 54l-14 21l-34 27l-18 -2l-51 29l-14 12l-10 15l4 -1l-2 7l-3 -5l-18 3l-12 -5l-18 19l3 14l7 4l-3 8l3 8l-18 52l-63 19l-22 3l-70 -65l-24 -13l-29 -9l0 -3l-3 5l-15 -8l-38 13l-1 -5l5 -2l-6 -9l-3 2l2 -4l-3 1l3 -8l-7 -37l22 -14l4 -7l44 -27l-12 9l11 -2l3 -8l101 -69l12 -4l27 -23l4 -7l-3 1l-1 -9l-4 -3l-3 7l1 -19l10 -21l18 -13l-8 -27l-39 -62l-31 -32l-32 -14l-4 8l-8 2l-4 -4l7 0l3 -6l-6 -1l10 -1l40 20l37 41l27 48l8 27l-19 16l-9 23l0 7l4 -4l2 5l7 -7l-1 -3l2 1l5 -18l29 -3l42 -42l47 -15l14 -10l1 -3l-24 -37l-12 -8l3 -3l-6 -1l3 5l-4 -5l3 -117l44 -71l32 -5l2 -4l10 5l-2 -12z","lx":1543,"ly":1197},{"code":"PV21","name":"Fryslân","d":"M1405 542l5 0l9 16l1 3l-14 -1l-7 -21zM1263 292l-2 5l-24 12l-7 -7l11 -13l20 0zM1223 287l-6 7l-3 -3l3 3l-19 1l-20 14l-41 18l5 18l-5 7l-10 5l-25 24l-27 1l-7 11l-16 -4l6 -15l53 -37l19 -17l56 -37l19 -4l17 4zM1944 158l5 4l-9 -3l-12 6l3 0l-5 9l3 19l-3 1l5 5l-6 1l6 -1l2 35l1 -3l8 11l-3 6l2 15l-12 4l14 -5l-4 -13l4 -6l8 5l5 0l-6 0l-11 -18l4 -8l10 5l1 14l6 -17l7 1l3 13l11 8l-10 -12l0 -6l9 11l11 -7l23 7l-4 32l9 4l-11 7l-5 14l-10 2l0 22l-5 0l-10 13l0 13l-9 4l5 3l-7 6l7 4l3 14l-7 13l-13 8l-14 36l-1 34l20 23l38 1l8 3l11 12l17 7l-6 14l42 15l-3 37l44 69l-22 43l-40 30l-21 -20l-31 -3l-16 16l-17 26l-83 58l-20 2l5 13l-19 12l-5 -8l-19 7l-7 -6l-11 -23l-8 3l-1 7l-7 -4l-11 2l0 5l-4 0l0 8l-30 25l-15 -6l-14 1l-2 -6l-9 -6l-20 15l-4 -15l-24 -25l-16 -5l2 12l-11 -5l1 -3l-3 3l4 -6l-5 6l-3 -6l0 6l-3 -7l-9 -2l-11 2l0 4l-7 -3l-1 -12l-11 -7l-15 11l-22 2l-4 10l-18 8l-67 -24l-18 7l-8 -2l-37 -29l3 -1l-7 -10l5 -2l-6 2l13 -15l24 -12l1 -12l-9 -24l9 -6l-3 -13l19 -12l-7 5l-3 -3l1 4l-5 4l-8 -32l-2 -14l8 -17l-8 -6l-1 -6l5 -3l-1 -7l4 5l-2 -15l-4 16l-3 1l-7 -15l-6 1l4 -4l-3 -8l11 0l2 5l4 0l-5 -5l6 4l-7 -13l-9 -32l-28 21l2 9l-4 -10l4 12l-6 -11l-23 6l-60 56l-28 19l85 -74l21 -7l-1 -7l3 0l0 7l4 -8l1 7l0 -4l6 2l23 -21l1 -15l15 -11l5 -22l4 -30l-8 -13l8 8l-4 -6l20 -21l-2 -2l-6 11l-9 3l-5 8l11 -11l17 -39l23 -23l30 -18l40 -48l112 -59l5 2l13 -6l6 -7l45 -24l17 -5l-5 -8l6 5l31 3l24 -8l1 -3l4 2l25 -8l36 -5l8 1l2 3l5 -7l31 7zM1518 133l3 10l-2 -6l-45 21l-1 7l5 -1l-9 6l-57 5l-26 21l-13 5l-8 -2l-5 5l-6 0l-2 6l-13 -3l-14 4l-6 4l-15 1l-4 10l-4 -1l0 4l-12 6l-27 -3l10 -22l13 -20l11 -7l195 -55l21 1zM1643 108l27 1l105 -9l19 3l-9 8l-23 1l-13 7l-57 16l-19 -1l-1 5l-2 -7l-28 -3l-18 15l-15 5l-25 -2l-10 -6l-7 -8l-1 -16l24 -18l11 -1l18 10zM2072 53l-11 3l-22 -2l4 5l-3 2l-36 13l-15 13l-37 6l3 5l-4 -4l-19 2l-6 0l-5 11l-5 3l-4 -3l5 -5l-5 -3l-11 8l-3 -2l2 -23l21 -16l143 -24l17 3l-1 4z","lx":1746,"ly":516},{"code":"PV25","name":"Gelderland","d":"M1777 1197l3 9l18 -11l4 0l5 8l29 -31l10 -1l3 -5l18 11l9 16l22 16l3 28l11 14l-5 28l13 8l-6 23l-29 12l2 8l9 5l-12 8l0 19l-6 17l9 0l3 18l11 0l8 26l13 19l-5 11l21 4l-8 15l4 7l10 4l1 7l3 -3l-4 -8l4 0l-4 -1l11 -6l7 5l19 3l0 -6l37 5l15 -5l4 6l15 0l12 -2l0 -10l8 -6l22 -6l5 4l18 1l9 21l20 24l9 2l6 18l9 6l17 -5l26 4l24 -6l11 10l-2 5l6 6l10 -10l6 0l4 5l3 -7l18 9l2 25l-7 15l37 12l30 -1l-3 24l-7 5l4 8l-10 12l-28 6l1 6l-6 10l1 18l18 -1l27 13l40 32l-2 4l13 1l5 24l-3 9l-20 6l-1 18l-8 13l2 2l-12 15l-11 4l-2 6l-10 3l-3 7l-7 3l-17 -15l-2 -7l-7 -1l-34 19l-34 8l-17 14l-5 -5l-3 4l-3 -2l-13 12l-17 7l0 6l-19 10l-15 -12l-13 6l-3 -7l-26 -9l-1 14l14 9l-4 10l4 18l-4 1l-9 -6l-18 -2l-2 -12l-11 -6l-26 3l-6 -21l-13 -7l-7 1l-5 6l-32 1l-22 -16l-1 -4l6 -2l0 -5l-15 -10l-3 3l-6 -7l-21 8l-6 -4l-10 10l11 1l13 6l5 18l15 9l0 23l-21 -7l-25 -2l-25 -18l-2 9l-6 1l3 5l-14 11l-4 -3l-8 4l-11 11l-10 2l-17 -7l-12 15l9 7l-7 1l-1 3l23 17l-4 3l1 11l11 2l-6 11l7 4l-33 32l-8 0l0 -7l-12 -5l-3 -11l-12 -17l-18 3l1 14l-3 5l-15 -1l-51 8l-16 -8l-11 -15l-17 -4l-14 -16l-15 -4l-15 -26l-17 -2l-20 -11l-21 3l-9 11l-6 1l-13 -3l-15 -13l-9 4l-6 14l-6 4l-18 2l-11 -6l-6 -7l-9 0l-22 35l-8 35l-43 24l-14 -4l-18 7l-23 -11l-14 4l-18 -3l-30 5l0 -8l12 -11l-5 -6l1 -14l-29 -16l-12 9l-6 0l-15 -21l-22 -11l-4 -11l-6 -4l18 3l3 -25l-22 -4l-4 -18l8 3l40 -1l-7 -8l2 -7l18 -4l6 -14l15 1l3 -11l14 -18l30 -59l13 8l10 0l16 -21l23 15l37 12l22 -17l24 0l19 -7l12 -10l34 2l17 11l20 7l12 13l20 5l14 9l14 -10l-4 -16l3 -8l-11 -22l-12 -9l-4 -11l2 -26l-15 -6l2 -9l-9 -1l4 -32l-6 -9l-3 -21l-4 3l-9 0l5 5l-1 10l-4 -1l-3 5l3 3l-6 6l-9 -2l-6 9l-11 1l-17 -11l18 -15l-1 -14l6 -8l-5 -2l15 1l-2 -6l-6 0l-1 -6l2 -6l10 -2l1 -4l-11 -6l1 -7l-12 -4l2 -8l-8 -5l5 -4l-28 -6l1 -38l-21 -14l-2 6l-10 -9l8 -29l7 1l14 -7l13 -1l7 -7l1 5l4 -9l3 0l-1 7l19 -8l17 0l9 -17l14 -43l1 3l9 -13l21 -18l5 -15l7 6l-7 -12l9 5l0 -8l2 3l7 -2l-7 -2l12 -2l4 3l16 -16l15 -3l27 -18l49 -43l7 -11l1 -8l-5 -3l8 -15l-3 8l2 5l10 -11l16 -57l7 -4l8 6z","lx":1777,"ly":1599},{"code":"PV20","name":"Groningen","d":"M2339 101l13 6l10 -10l10 4l4 -3l-3 3l3 4l-11 -4l-1 3l12 3l-2 4l-12 -3l-1 3l12 3l-7 4l24 3l1 -3l-12 -3l1 -15l1 5l16 6l12 10l-6 37l10 13l-2 4l4 4l-1 10l9 36l23 14l5 8l29 10l12 0l-8 2l-27 -8l-12 -10l-4 6l49 19l6 -7l0 10l11 4l8 -2l6 5l20 -1l14 -10l-9 13l1 17l-5 13l5 10l13 10l20 2l15 7l5 -2l7 5l21 4l2 5l1 -9l7 47l-7 10l14 9l-16 4l-8 17l-1 16l-7 10l4 19l13 9l-2 35l15 83l-5 7l-18 66l-60 104l4 13l-14 0l2 -13l-5 2l-4 -4l-13 -15l-3 -8l-17 0l20 -48l-21 -9l-54 -75l-133 -135l-4 -3l-28 -2l-40 18l0 -8l-5 -3l2 -4l-11 -18l-10 -9l-8 -2l-5 -19l-12 6l-11 -26l-4 3l-5 -6l-3 -12l-15 -5l-7 2l-8 -6l-25 8l-3 10l-25 13l-2 11l-14 15l-11 51l-4 1l-8 22l-37 -14l-5 -7l-14 -8l-38 -1l-20 -22l1 -35l14 -36l13 -8l7 -13l-3 -14l-7 -4l7 -6l-5 -3l9 -4l0 -13l10 -13l5 0l0 -22l10 -2l5 -14l11 -7l-9 -4l4 -32l4 7l-1 -4l5 -1l-27 -10l-17 5l-1 -9l17 -8l-16 -1l5 -5l-3 -5l-13 6l-5 -3l2 -6l14 -1l-33 -6l0 -5l10 0l1 -3l-7 -8l-8 -2l4 -9l9 0l16 16l9 -4l-30 -21l6 -1l-2 3l4 1l6 -2l-7 -1l9 2l26 -7l37 24l20 -17l18 -9l82 -15l31 -3l0 3l20 -5l21 -7l27 -17l36 -11l34 -5zM2155 3l5 13l14 7l-18 -5l-13 -14l-3 5l18 12l-9 2l-15 -2l11 13l-6 11l-13 -30l13 -13l10 -2z","lx":2293,"ly":289},{"code":"PV31","name":"Limburg","d":"M1791 2021l8 0l6 -7l2 11l27 -1l24 14l4 9l2 -2l5 3l-13 9l4 38l33 14l27 6l-12 36l-4 2l-2 18l21 14l7 13l18 16l14 31l16 13l9 15l1 25l8 25l-2 24l-5 0l-5 53l15 -1l-9 12l9 32l-25 24l3 5l-18 2l-10 29l-17 24l-3 12l-36 36l10 22l-13 3l4 42l6 12l13 2l15 -13l30 -15l11 9l-29 15l26 16l-9 7l0 4l-26 5l-4 5l-20 6l-3 12l-4 -2l-4 8l-10 3l-17 22l-13 2l-14 12l-19 27l-1 17l-7 4l-1 7l-13 0l-18 -35l-15 15l-18 3l9 15l-3 9l3 12l12 8l0 7l7 3l-1 16l-8 8l3 6l41 -15l9 10l10 -5l31 0l-7 23l-7 7l8 4l1 20l19 7l4 -2l4 3l-2 6l10 2l3 -3l12 5l3 -3l-8 13l-5 18l10 23l-8 13l-2 16l-12 -5l-1 -7l-26 13l-1 13l6 7l0 16l-15 14l-13 -10l-7 9l3 8l34 23l-6 12l2 10l-27 2l-16 -11l-21 6l-7 7l-4 1l-1 -6l-6 1l-3 4l-8 -6l-3 -15l-16 7l-10 12l-3 -14l-10 8l-15 3l-11 -16l-6 4l-8 -18l-6 1l-13 13l-5 15l-6 0l-8 -8l-3 5l-11 5l-13 -2l12 -25l-4 -35l-28 -10l2 -4l-5 -3l1 -6l-8 -17l2 -19l5 -4l-4 -4l18 -11l7 1l2 -9l10 -11l1 -13l6 -2l9 5l4 -4l1 -14l12 -17l1 -9l9 -4l-5 -11l-14 6l-6 -2l-2 -6l32 -40l1 -17l6 -10l-13 -13l9 -17l2 -14l14 4l5 -4l-3 -11l6 -10l-6 -12l9 -6l10 5l6 -6l-2 -11l-11 0l-4 -4l1 -8l10 -12l11 -2l4 -11l7 -5l-13 -9l1 -4l-10 -12l-6 10l-7 -5l-19 13l1 -13l-7 -1l0 -5l7 -3l-5 -2l3 -6l-20 -11l-27 9l-14 -5l-9 3l-3 -3l-10 1l-6 -10l2 -5l-61 -25l37 -10l5 -49l32 -46l140 -44l40 -35l-42 -72l-24 -130l37 7l11 9l20 -2l47 -19l19 20l2 -6l10 -1l-8 -12l2 -14l-10 -15l-4 -29l-39 -34l-7 -63l-6 -5l-37 -9l-5 -7l-5 -24l-10 -9l3 -5l-1 -14l18 -3l12 17l3 11l12 5z","lx":1804,"ly":2673},{"code":"PV30","name":"Noord-Brabant","d":"M1517 1939l6 -1l9 -11l28 -1l13 9l17 2l15 26l15 4l14 16l18 5l10 14l8 6l15 2l50 -8l13 4l6 6l6 28l47 17l7 63l39 34l4 29l10 15l-2 14l8 12l-10 1l-2 6l-19 -20l-47 19l-20 2l-11 -9l-37 -7l24 130l42 72l-40 35l-140 44l-32 46l-5 49l-41 8l-3 -49l-19 -17l-9 -15l-23 -5l-12 17l-17 3l-17 22l-49 -15l-3 11l-4 3l-28 2l-23 -6l-18 6l-8 -8l11 -41l-29 -20l-26 14l-20 -6l-2 -35l-42 -52l24 -42l-18 -44l-23 0l-5 -9l1 -8l-5 -1l-15 16l0 21l-5 10l-58 56l-5 -1l7 -3l-10 -5l-3 -11l-4 2l3 -4l-5 2l-7 -5l-12 4l-1 4l-12 -6l-43 6l-11 -5l-4 -19l14 -2l27 10l7 7l4 -6l-9 0l-4 -29l9 -11l2 3l4 -4l-6 -2l5 -22l-15 -2l-4 -14l-22 -5l-2 -5l-5 -1l-14 6l-4 10l-13 7l-8 17l-10 2l-7 17l-19 8l2 20l-12 -1l-7 5l-47 -12l-27 10l-4 -29l13 -26l-6 -11l-43 4l-9 8l-15 3l-42 20l-2 4l9 0l4 13l-1 4l-3 -1l1 6l-8 6l6 15l27 37l-5 4l5 8l-7 -1l-26 11l-30 -4l-5 -22l-39 1l-8 -12l2 -15l-3 -18l8 -9l-38 -90l13 -53l-31 -50l6 -23l11 -10l16 -7l15 3l9 -7l15 -4l2 3l0 -4l9 -3l20 0l22 -13l5 6l-3 -5l11 -13l3 -13l11 -8l-13 6l9 -8l0 -4l-7 2l8 -8l0 4l3 -4l-3 7l18 -9l-12 10l17 -7l5 2l-1 3l1 -3l32 15l25 -3l0 6l3 -6l-3 -1l8 2l44 -13l26 -17l-1 -5l2 5l5 0l-2 -7l21 -6l35 -26l11 -12l10 -25l13 -13l16 -7l27 2l13 -3l24 -20l20 -9l57 7l6 4l4 11l22 11l13 20l8 1l12 -9l29 16l-1 14l5 6l-12 11l0 8l30 -5l18 3l18 -4l19 11l13 -6l22 2l37 -20l5 -6l6 -32l25 -36l6 1l10 11l14 2l17 -6l6 -14l9 -4l15 13z","lx":1322,"ly":2170},{"code":"PV27","name":"Noord-Holland","d":"M940 664l-9 -2l-3 -15l6 -12l9 -1l5 9l12 5l-14 7zM1191 688l-1 4l-6 2l3 6l-7 -2l-1 11l8 -3l42 78l-6 89l6 0l-2 5l3 -5l3 11l4 0l-4 5l3 5l21 19l18 -3l8 -15l44 2l8 6l-8 2l10 -1l7 5l3 31l14 7l-1 3l-5 -3l0 6l-7 2l3 2l-5 4l2 -4l-6 4l5 5l-8 8l7 -7l-2 -2l-25 7l-11 37l-16 9l-5 9l-17 3l-10 11l-21 4l0 -7l-5 -7l-10 1l-12 -12l-3 1l3 4l-8 -4l-6 7l-1 -6l-2 8l-3 -4l1 4l-5 -9l-5 0l-15 9l-4 9l9 64l8 7l16 43l5 4l8 17l-6 12l-12 7l0 11l6 9l-12 -1l-8 5l-4 -3l5 11l6 -5l4 2l-5 6l1 18l26 5l3 -19l9 -17l5 6l15 -1l3 3l-30 13l-2 12l-12 9l-5 17l-11 1l-14 14l-4 14l-10 5l1 11l-12 -5l3 -2l-12 7l-5 -7l0 8l4 4l-5 1l6 5l6 -1l-3 4l4 -1l12 9l7 -3l-3 9l8 -1l5 5l-6 7l4 5l25 -4l1 8l0 -8l5 -3l11 2l12 9l19 5l9 15l-6 2l4 3l3 -1l-1 -3l15 8l39 -8l9 0l-2 7l4 -8l3 4l-1 -8l4 10l12 4l12 8l12 -9l6 5l-7 0l-8 11l7 14l-28 -4l-29 62l-4 21l-17 32l-48 -4l-52 17l-3 -20l-6 0l3 -16l-11 -4l11 -1l0 -24l4 0l-4 -1l3 -6l11 -5l-8 -9l-1 -14l-8 1l-6 -20l17 -5l8 -9l4 5l0 -5l-4 -4l-12 7l-8 -7l-4 8l-2 -23l-6 -1l-11 16l-9 -2l-11 12l-28 0l2 12l-13 18l-16 2l-3 -4l-6 4l-3 -3l-19 20l-19 9l-23 -2l-13 11l-12 4l-6 9l-7 -7l-1 -22l-13 -1l-14 8l-5 0l-4 -5l-26 16l-10 2l-42 -6l-4 -9l8 -8l4 -38l14 -13l17 -37l-20 -5l-10 2l-3 8l-48 -22l43 -104l4 -18l1 -9l-5 -16l-11 3l-4 -7l6 7l10 -5l3 6l3 -1l-1 -5l5 1l-1 3l7 -4l-1 5l6 2l-3 -7l10 5l-9 -6l9 -2l-3 -2l9 0l-9 -3l6 -2l-4 1l10 -1l-7 -3l-22 7l-17 1l15 -1l20 -50l16 -92l21 -172l23 -56l18 -70l13 -96l7 -13l22 -3l11 0l-1 3l4 -4l0 5l-6 1l9 13l-7 -11l5 5l4 -3l2 2l3 -4l-6 -4l8 -2l0 13l-7 19l12 24l-2 2l45 27l6 0l35 -16l23 -30l23 -6l12 1l3 -9l7 2l-4 0l1 5l7 3l-1 -4l3 2l3 -2l79 -69zM1074 446l10 6l10 21l-6 9l-2 52l-16 15l0 10l-12 16l3 -6l-5 4l-4 10l-19 5l-18 23l3 1l-2 6l-8 -2l0 3l-24 -10l18 16l-25 8l-4 5l-6 -8l-5 -7l-3 -28l10 -50l80 -128l14 0l12 22z","lx":1066,"ly":1098},{"code":"PV23","name":"Overijssel","d":"M1919 799l45 50l-22 30l-32 14l25 69l8 7l-4 6l14 6l-2 -7l3 -1l6 6l5 -9l10 -2l14 10l4 -2l6 10l9 1l4 5l6 -5l11 7l1 -4l20 -4l0 12l26 17l8 29l6 5l8 -6l5 1l4 -6l6 3l8 -10l3 10l5 4l8 2l10 -13l6 7l28 5l-4 -36l26 -22l41 -10l64 27l-4 8l3 2l-3 13l8 1l10 13l-5 30l33 29l-10 3l-17 -4l-7 16l-24 -5l17 36l-5 39l38 24l15 5l54 -2l-1 11l7 -1l54 16l14 -9l10 -25l7 -5l17 45l7 7l10 22l16 3l10 30l0 23l-10 16l-6 25l-6 4l-7 22l2 21l9 19l17 16l-3 8l-24 10l-15 -3l-13 5l-7 22l-15 27l-30 7l-1 6l-17 16l-4 29l-12 11l-95 4l-27 -8l-10 -4l7 -15l-2 -25l-18 -9l-3 7l-4 -5l-6 0l-10 10l-6 -6l2 -5l-11 -10l-24 6l-26 -4l-17 5l-9 -6l-6 -18l-9 -2l-20 -24l-9 -21l-18 -1l-5 -4l-22 6l-8 6l0 10l-12 2l-15 0l-4 -6l-15 5l-37 -5l0 6l-19 -3l-7 -5l-11 6l4 1l-4 0l4 8l-3 3l-1 -7l-10 -4l-4 -12l8 -10l-21 -4l5 -11l-13 -19l-8 -26l-11 0l-3 -18l-9 0l6 -17l0 -19l12 -8l-9 -5l-2 -8l29 -12l6 -23l-13 -8l5 -28l-11 -14l-3 -28l-22 -16l-9 -16l-18 -11l-3 5l-10 1l-29 31l-5 -8l-4 0l-18 11l-10 -26l-16 -21l-6 -6l-9 4l-2 -3l-4 -35l-10 -11l-7 -16l-12 -6l16 -1l-22 -1l10 -5l-4 4l9 -2l9 3l-6 -8l5 -21l40 -9l12 6l10 -1l18 -13l19 2l1 -4l17 -15l6 1l-11 -14l-15 -6l-9 -9l-25 -6l7 -13l12 -9l2 -8l-15 -19l-15 -40l-40 -33l-8 -4l-21 0l-17 -24l17 -12l9 6l2 6l14 -1l15 6l30 -25l0 -8l4 0l0 -5l11 -2l7 4l1 -7l8 -3l11 23l7 6l19 -7l5 8l19 -12l-5 -13l19 -2l26 -17z","lx":2126,"ly":1262},{"code":"PV26","name":"Utrecht","d":"M1165 1398l2 23l4 -8l8 7l12 -7l4 4l0 5l-4 -5l-8 9l-17 5l6 20l8 -1l1 14l8 9l-11 5l-3 6l4 1l-4 0l0 24l-11 1l11 4l-3 16l6 0l3 20l52 -17l48 4l17 -32l4 -21l29 -62l69 16l4 7l7 2l15 13l-8 29l10 9l2 -6l21 14l-1 38l28 6l-5 4l8 5l-2 8l12 4l-1 7l11 6l-1 4l-10 2l-2 6l1 6l6 0l2 6l-15 -1l5 2l-6 8l1 14l-18 15l17 11l11 -1l6 -9l9 2l6 -6l-3 -3l3 -5l4 1l1 -10l-5 -5l9 0l4 -3l3 21l6 9l-4 32l9 1l-2 9l15 8l-2 24l3 9l13 11l11 22l-3 8l4 16l-14 10l-14 -9l-20 -5l-12 -13l-20 -7l-17 -11l-34 -2l-12 10l-19 7l-24 0l-22 17l-37 -12l-23 -15l-16 21l-10 0l-13 -8l-30 59l-14 18l-3 11l-15 -1l-6 14l-18 4l-2 7l7 8l-25 1l-3 -12l3 -14l-21 9l2 -12l-3 -20l-14 5l0 -11l-12 -9l-6 -20l-6 5l-6 -24l-11 9l-25 5l-12 -34l-10 -8l-19 -27l27 -7l-6 -13l-30 4l-4 -9l8 -5l-2 -8l7 -4l9 -14l26 -15l4 -6l-30 2l3 -6l-5 -3l-1 -36l-22 -18l10 -4l4 -15l14 -4l15 8l13 -2l0 -19l13 -6l-25 -19l-8 -2l-21 -24l-7 1l0 -19l-6 -10l14 0l19 -9l19 -20l3 3l6 -4l3 4l16 -2l13 -18l-2 -12l28 0l11 -12l9 2l11 -16z","lx":1294,"ly":1646},{"code":"PV29","name":"Zeeland","d":"M115 2378l22 2l-3 5l4 -4l0 4l10 1l-3 5l2 -3l-1 4l6 0l-3 -4l11 12l15 4l6 5l50 12l4 8l20 16l24 3l-2 7l9 6l3 -16l12 1l14 7l-2 6l6 10l-1 -15l4 8l0 -7l6 -1l-2 2l3 2l0 -3l9 7l17 0l6 -11l11 -2l19 -14l21 -6l7 2l8 -22l-3 -15l7 -8l31 6l0 5l2 -4l8 22l11 16l32 6l13 11l13 18l0 -8l-14 -19l1 -3l11 -2l19 20l-4 -21l3 -3l12 -5l0 14l9 -15l14 0l7 16l3 -1l9 15l-48 61l-51 34l-26 19l-12 2l-3 -5l-8 5l-7 -4l-20 12l-5 9l-11 2l-4 9l-16 4l-4 -10l-10 6l2 8l-23 8l-6 -9l9 -6l3 -5l-4 -5l-20 13l-17 -3l-10 4l-10 -5l-1 4l-4 -1l-7 -6l0 -12l5 -32l-15 -10l-3 5l-5 -2l-6 -10l-41 -7l-3 -5l-8 -1l-14 -11l-12 2l-13 -5l-22 -15l-6 8l4 6l-4 7l-13 -11l-5 7l-9 -2l-4 9l-6 -6l-9 1l7 46l-54 4l-16 -4l-7 -17l-7 3l-13 -19l-8 -4l4 -11l-10 -10l1 -4l7 -4l-13 -14l19 -21l-7 -16l-2 -26l8 -9l35 -11l6 3l34 -11l11 -8zM467 2031l-9 -1l-15 -32l12 -3l-1 8zM348 1995l-4 7l0 -6l-7 7l-1 11l14 -2l3 4l-2 -3l30 -4l0 4l9 3l6 12l4 -5l36 -1l-1 7l4 -5l2 2l3 14l16 16l5 19l11 4l10 -2l16 11l6 -1l-2 3l12 7l16 -13l21 1l8 -5l5 18l7 0l-8 3l14 2l-13 -2l-1 5l14 -1l-11 2l0 3l11 3l-1 5l7 6l2 11l4 0l-3 -4l3 -1l25 6l-22 11l-10 16l-1 9l4 13l22 29l5 12l-13 53l38 90l-8 9l3 18l-2 15l8 12l-24 1l0 -10l-8 -12l-17 -6l-6 -8l-31 13l-52 -15l-19 -14l-3 -7l3 -4l-12 -3l-1 -5l-2 4l-11 -7l2 -5l-3 -12l-4 15l-21 -24l-29 15l-7 -4l1 19l-10 21l-8 23l-20 -4l-10 7l-32 6l-25 -23l0 -5l-14 -6l-14 4l-5 -3l-5 -14l-8 -10l-16 -14l-7 0l8 -11l13 8l-1 10l5 -6l5 5l3 -3l-7 -6l10 -9l-15 6l-8 -7l11 -7l6 1l2 -11l-4 4l-7 -8l-2 1l4 8l-3 3l-12 7l-9 0l2 3l-12 1l-1 5l6 3l-7 -3l-17 12l-16 1l-8 -13l-1 11l3 2l-7 -2l-10 3l-29 -23l-25 -40l-24 -18l-18 -22l3 -15l81 -50l21 -6l33 9l35 -13l3 -16l-7 -6l5 3l1 -4l-10 -1l10 -2l11 -21l4 -2l-4 4l4 4l1 -6l6 0l4 -6l-3 -6l6 -2l0 -9l-16 -9l-12 -18l-1 -22l7 -14l25 -21l-10 9l19 -5l-7 -2l30 -6l34 3l5 -13l9 -5zM322 2060l-10 1l-5 8l14 -1l-17 4l-19 11l2 2l-23 6l-1 14l4 1l-11 17l3 -1l-3 6l5 1l-8 2l10 5l-1 -5l6 -1l-6 -5l6 6l-6 8l-10 -7l-3 10l-5 -8l-5 7l8 3l-10 -2l-1 6l6 0l-7 2l0 19l10 -2l6 5l8 0l-4 1l2 3l31 -8l9 3l4 -5l13 -4l15 4l13 -4l8 2l-6 2l6 -1l12 9l32 -37l-12 -5l17 -14l9 -2l-10 2l-20 16l1 -13l-9 -26l-14 -13l-6 2l-21 -10l-4 -3l8 4l1 -8zM522 2098l5 10l-6 11l-24 20l-9 -2l-27 14l-30 3l-14 -12l-8 -12l-5 8l-9 -1l-33 37l13 23l4 1l-3 2l3 -1l4 11l-6 6l-13 3l-6 9l5 3l-4 0l1 5l40 -4l4 6l-3 2l9 13l12 -6l32 11l1 9l0 -9l9 3l2 8l25 13l-3 -1l3 5l-4 1l4 9l-2 7l11 18l9 9l6 13l23 11l4 6l14 -1l20 -12l23 8l6 -2l-4 -57l-27 -14l-11 -14l8 5l-4 -3l5 1l2 -4l-9 -8l-15 1l-5 -5l-11 2l-27 -4l-2 2l-19 -31l-15 -4l2 -7l-4 -6l-27 -15l4 -13l24 -4l10 -9l25 -9l19 4l4 8l46 -2l-4 -4l7 -8l-5 -3l-5 6l-26 0l-6 -13l-12 -9l-1 -12l5 2l11 -13l19 4l31 18l-2 -10l-23 -12l1 -6l-4 4l-10 -2l13 -4l-3 -3l-10 2l15 -3l-4 -13l-2 -2l-5 3l-24 1zM248 2259l16 -7l-3 -3l5 -14l15 -9l27 7l17 -8l3 3l0 -3l10 2l9 9l12 0l-20 -18l-16 4l-2 -3l0 4l-3 -4l3 5l-5 2l-30 -9l-17 9l-23 23l-3 -10l2 -8l-9 -16l9 -11l-10 10l-23 -15l-4 -21l-12 4l0 15l16 15l-6 -2l17 11l-4 2l4 -2l-2 9l4 -5l17 35z","lx":350,"ly":2319},{"code":"PV28","name":"Zuid-Holland","d":"M671 2011l29 12l3 5l-23 6l-23 -10l-22 -15l2 -6zM427 1972l6 4l-16 -2l-23 6l-3 -1l21 -20zM842 1382l11 6l3 -8l10 -2l20 5l-17 37l-14 13l-4 38l-8 8l4 9l42 6l10 -2l26 -16l4 5l5 0l14 -8l13 1l1 22l7 7l6 -9l12 -4l15 -11l7 2l6 10l0 19l7 -1l21 24l8 2l25 19l-13 6l0 19l-13 2l-15 -8l-14 4l-4 15l-10 4l22 18l1 36l5 3l-3 6l30 -2l-4 6l-26 15l-9 14l-7 4l2 8l-8 5l4 9l30 -4l6 13l-27 7l19 27l10 8l12 34l25 -5l11 -9l6 24l6 -5l6 20l12 9l0 11l14 -5l3 20l-2 12l21 -9l-3 14l3 12l-15 0l-8 -3l4 18l22 4l-3 20l0 5l-75 -10l-20 9l-24 20l-13 3l-27 -2l-16 7l-13 13l-13 29l-43 34l-21 6l-2 -5l2 5l-3 -5l-4 2l2 5l-2 -5l-4 1l0 -5l0 6l-7 -4l-21 12l-40 12l-54 -19l0 3l-4 -3l-5 2l-22 -8l-4 15l-3 3l4 9l-6 5l-2 -4l-9 4l-11 -2l4 11l-8 16l-20 9l-39 8l-28 -8l-8 -14l-9 -1l-12 -9l-15 -1l-2 -4l-5 5l4 -6l-5 -10l-23 -11l-25 -3l-2 2l-22 -6l-12 -30l1 -6l-8 1l-4 -15l7 -1l-5 -4l1 -20l-11 -14l0 -6l-8 -6l-29 -2l-10 6l-31 6l3 8l-9 6l-9 -3l-10 26l3 1l2 -4l8 7l-3 4l-13 -2l-9 -8l15 -12l4 -8l-7 -31l11 -15l28 -8l27 -14l42 -10l3 15l9 8l3 -2l-2 4l5 5l-2 -7l8 0l16 -17l-1 -9l-24 -37l1 -7l15 -18l0 -11l-8 -6l-29 9l-10 -3l-14 -49l13 -24l16 -6l26 4l4 -10l32 12l11 -8l41 -46l14 -25l-1 5l3 0l37 -39l8 -11l-2 -7l5 8l5 0l-2 3l5 -6l-3 3l0 -5l-4 3l-4 -6l4 1l13 -16l16 -12l38 -47l28 -45l2 2l65 -130zM498 1907l-9 10l1 8l-5 0l3 5l8 -4l5 8l40 21l5 4l-2 3l4 2l2 -4l4 6l2 -2l15 9l19 6l16 20l19 15l-1 4l3 -2l11 16l13 8l-1 3l1 -3l11 4l21 16l38 2l7 -5l7 -19l-14 -9l-60 -30l-33 -10l-12 -16l6 0l5 -5l-11 -4l-13 -13l-20 -6l-16 -19l-12 -1l-9 4l1 -12l-1 11l-4 -1l0 -7l-2 7l-2 -7l-15 -3l-14 -15z","lx":805,"ly":1726}],"plants":{"1008":[[4,32010]],"1010":[[4,13484]],"1011":[[4,11025]],"1024":[[4,5116]],"1025":[[0,15],[4,14642]],"1026":[[4,31271]],"1027":[[4,12591]],"1028":[[4,13741]],"1029":[[0,834],[2,232],[4,22107]],"1030":[[4,15913]],"1031":[[2,134],[4,16613]],"1032":[[4,8008]],"1033":[[0,3032],[4,247509]],"1034":[[4,3462]],"1038":[[4,4839]],"1039":[[4,38147]],"1040":[[4,6355]],"1041":[[4,4913]],"1044":[[4,33626]],"1045":[[4,39379]],"1046":[[4,6546]],"1335":[[3,78]],"2002":[[2,23711]],"2011":[[2,106285]],"2012":[[2,68001],[4,34]],"2013":[[2,31104]],"2015":[[2,22843]],"2016":[[0,203],[2,28724]],"2017":[[2,10886]],"2018":[[2,41646]],"2019":[[2,26084],[4,26]],"2020":[[2,3835]],"2021":[[2,25377]],"2022":[[2,19779]],"2023":[[2,27665]],"2024":[[2,12458]],"2025":[[2,7181]],"2026":[[2,4897]],"2027":[[2,13782]],"2028":[[2,30660]],"2029":[[2,21094]],"2030":[[2,5731]],"2031":[[2,48685]],"2032":[[2,25174]],"2036":[[2,14472]],"2037":[[2,6758]],"2038":[[2,32311]],"2040":[[2,1255]],"2041":[[2,972]],"3001":[[0,23202]],"3010":[[0,76226]],"3014":[[0,39668],[8,15168]],"3022":[[0,109609]],"3023":[[0,7962]],"3027":[[0,9730]],"3028":[[0,20068]],"3030":[[0,51567],[2,11],[4,1442]],"3031":[[0,31860]],"3032":[[0,19612]],"3033":[[0,77337],[8,1474]],"3034":[[0,21332],[8,6626]],"4005":[[8,24117]],"4006":[[3,38],[8,18808]],"4016":[[8,14047]],"4017":[[8,6937]],"4018":[[8,8884]],"4019":[[8,94431]],"4020":[[0,38],[8,37808]],"4021":[[8,36799]],"4022":[[8,22409]],"4023":[[1,705],[8,53084]],"4024":[[8,33998]],"4025":[[8,27885]],"4026":[[8,126168]],"4027":[[1,71980],[8,22]],"4028":[[0,24],[8,24229]],"4030":[[8,8748]],"5001":[[3,29],[8,28987]],"5002":[[8,149722]],"5003":[[8,12181]],"5004":[[8,13961]],"5005":[[8,13814]],"5011":[[8,11247]],"5012":[[8,44222]],"5014":[[8,17235]],"5015":[[8,18233]],"5016":[[3,33],[8,16509]],"5017":[[8,118238]],"5018":[[8,7260]],"5019":[[8,35998]],"5020":[[8,62056]],"5022":[[8,36362]],"5023":[[8,32798]],"5025":[[8,5611]],"6003":[[1,43705]],"6004":[[1,84069]],"6005":[[1,226500]],"6006":[[1,23843]],"7002":[[3,18920]],"7006":[[3,6035]],"7014":[[3,8610]],"7015":[[3,18574]],"7016":[[3,39122]],"7017":[[3,13569]],"7018":[[3,9211]],"7019":[[3,78903],[8,32]],"7020":[[3,208097]],"7021":[[3,69937]],"7022":[[3,102671]],"7023":[[3,38130]],"8005":[[3,47819],[9,337]],"8009":[[3,56021]],"8011":[[3,107416]],"8016":[[3,19050],[8,57]],"8017":[[3,17381]],"8019":[[3,16073]],"8021":[[3,163022],[9,16]],"8022":[[3,179294]],"8023":[[3,23020]],"8024":[[3,73467]],"8025":[[3,27480],[8,2290]],"8026":[[3,36917],[8,486]],"9010":[[3,16777]],"9012":[[3,26459]],"9013":[[3,5491]],"9016":[[3,160537]],"9017":[[3,5096]],"9019":[[3,35078]],"9020":[[3,5236]],"9024":[[3,249270]],"9025":[[3,68135]],"9026":[[3,29752]],"9027":[[3,30215]],"9030":[[3,2906]],"9031":[[3,6212]],"9032":[[3,6947]],"9037":[[3,3252],[11,16341]],"9038":[[3,27112]],"9039":[[3,6514]],"9040":[[3,11552]],"9041":[[3,55158]],"9042":[[3,8054]],"10001":[[9,60328]],"10003":[[9,49248]],"10008":[[9,29808]],"10009":[[9,279115]],"10010":[[9,73111]],"10012":[[9,32122]],"10020":[[3,10318],[9,20759]],"10021":[[3,94],[9,77963]],"10024":[[9,13866]],"10025":[[9,16031]],"10027":[[3,22],[9,216108]],"10028":[[9,99773]],"10029":[[9,24059]],"10031":[[9,14163]],"10032":[[9,10224],[11,41]],"10034":[[9,36093]],"10035":[[9,32150]],"10036":[[9,50852]],"10037":[[7,248],[9,8287]],"10038":[[9,14302]],"11004":[[7,60335]],"11005":[[7,103796]],"11006":[[7,40753]],"11008":[[7,16903],[9,9633]],"11010":[[7,32145],[9,1516]],"11012":[[7,48445]],"11013":[[7,110257],[9,710]],"11014":[[7,688373],[9,9704]],"12001":[[7,43178]],"12006":[[7,48829]],"12010":[[7,76299]],"12012":[[7,13814]],"12013":[[7,191142]],"12014":[[7,107880]],"12016":[[7,45945]],"12018":[[7,8596]],"12019":[[7,37132]],"12021":[[7,184034]],"12022":[[7,177091]],"12023":[[7,69019]],"12024":[[7,40275]],"12025":[[7,12418]],"12026":[[7,4939]],"13003":[[7,69191]],"13004":[[7,27601]],"13005":[[7,94889]],"13010":[[7,144227]],"13012":[[7,60927]],"13023":[[11,60393]],"13030":[[7,758],[11,4851]],"13033":[[11,101862]],"13034":[[11,23461]],"13035":[[11,50723]],"13038":[[7,48],[11,23785]],"13039":[[11,75937]],"13041":[[11,108363]],"13042":[[9,128],[11,31947]],"13044":[[7,94972],[11,25858]],"13046":[[11,99688]],"13047":[[11,17413]],"13048":[[11,45174]],"13049":[[11,52768]],"14002":[[9,45499],[11,5670]],"14003":[[9,112406]],"15004":[[11,71928]],"15005":[[11,251063]],"15007":[[11,213447]],"15008":[[11,866526]],"16009":[[11,81997]],"16010":[[11,276826]],"16011":[[11,48547]],"17002":[[11,6368]],"17004":[[11,2018]],"17005":[[11,5738]],"17011":[[11,59948]],"17013":[[11,32176]],"17016":[[11,34555]],"17026":[[11,13627]],"17029":[[9,29818]],"17040":[[11,14306]],"17041":[[11,66468]],"17043":[[11,9729]],"17044":[[11,121868]],"17045":[[11,34518]],"17048":[[11,12192]],"17052":[[11,34764]],"17053":[[11,50142]],"17054":[[11,6394]],"17055":[[11,24737]],"17056":[[11,9129]],"17057":[[11,12608]],"17061":[[11,343487]],"17062":[[11,7033]],"17063":[[9,20886]],"17065":[[9,4161],[11,24738]],"17066":[[11,17702]],"17067":[[11,4264]],"17068":[[11,1864]],"17070":[[11,60114]],"17074":[[11,3070]],"17075":[[11,2640]],"17076":[[9,6817],[11,38932]],"17077":[[11,75933]],"17078":[[11,116511]],"17079":[[11,37549]],"18006":[[10,7863]],"18007":[[10,9820]],"18009":[[10,16867]],"19001":[[10,15787]],"19003":[[10,11025]],"20009":[[10,21485]],"20010":[[10,7941]],"20011":[[10,77479]],"21001":[[10,117341]],"22008":[[10,3601]],"22012":[[10,10887]],"22013":[[10,10230]],"23002":[[10,53560]],"24001":[[10,19835]],"24002":[[10,7484]],"25001":[[6,52347]],"25003":[[6,30629]],"25008":[[6,5790],[10,82]],"25012":[[6,3867]],"25013":[[6,7421]],"25014":[[6,5135]],"25016":[[6,2202]],"25017":[[6,270515]],"25019":[[6,4408]],"25020":[[6,39935]],"25021":[[6,252326]],"25023":[[6,90698]],"25025":[[6,12514]],"25026":[[6,6977]],"25027":[[6,6051]],"25028":[[6,5679]],"25029":[[6,3570]],"26005":[[6,58288]],"27003":[[6,472799]],"27004":[[6,46856]],"27005":[[6,36752]],"27006":[[6,20888]],"27008":[[6,180787]],"27009":[[6,36949]],"27010":[[6,64115]],"27011":[[6,42373]],"28002":[[5,45],[6,44774]],"28003":[[6,183210]],"28005":[[6,128099]],"28006":[[6,42331]],"29002":[[6,165184]],"29003":[[5,189],[6,89614]],"30003":[[5,80704]],"30005":[[5,68745],[6,14]],"30007":[[5,61496]],"30011":[[5,10254]],"30013":[[5,32171]],"30014":[[5,38670]],"30015":[[5,185497]],"30016":[[5,46121]],"30017":[[5,193783],[6,58]],"30018":[[5,6455]],"30019":[[5,27225]],"30020":[[5,54505]],"30021":[[5,25137]],"30022":[[5,127468]],"30023":[[5,18173]],"30024":[[5,121074]],"30025":[[5,35506]],"31005":[[7,321494]],"32002":[[6,231124]],"33001":[[0,11743],[4,18445]],"994":[[6,115]],"BRHGE01":[[11,155]],"Schiph1":[[7,187]],"99998":[[1,9],[7,28],[10,340],[11,557]],"99999":[[2,15],[3,8],[4,93],[5,31],[6,254],[7,146],[8,39],[9,23],[10,8],[11,123]]}};
+  /* GEO:END */
+
+  const WEEK = 7 * DAY;
+  const mondayOf = (t) => t - ((new Date(t).getUTCDay() + 6) % 7) * DAY;
+  // white -> orange -> red; the same stops draw the legend
+  const RAMP = [[0, [255,255,255]], [0.25, [253,219,176]], [0.5, [246,152,60]], [0.75, [226,87,43]], [1, [178,24,32]]];
+  function rampColor(x){
+    x = Math.max(0, Math.min(1, x));
+    for (let i = 1; i < RAMP.length; i++) {
+      const [p1, c1] = RAMP[i], [p0, c0] = RAMP[i - 1];
+      if (x <= p1) { const f = (x - p0) / (p1 - p0); return "rgb(" + c0.map((c, k) => Math.round(c + (c1[k] - c) * f)).join(",") + ")"; }
+    }
+  }
+  const rampCss = () => "linear-gradient(to right," + RAMP.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
+  const MODES = {
+    // growth: 0%/week or less is white, +25% orange, +50% or more red
+    growth: { value: (p, w) => mapState.growth[p][w], color: (g) => rampColor(g / 50), ticks: ["≤ 0%", "+25%", "≥ +50%"], caption: "Change per week, 4-week trend",
+      fmt: (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "% per week" },
+    // level: log scale from 10 to 1,000 × 10¹¹
+    level: { value: (p, w) => mapState.level[p][w], color: (v) => rampColor((Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: ["≤ 10", "100", "≥ 1,000"], caption: "RNA × 10¹¹ per 100,000 inhabitants",
+      fmt: (v) => sewageFmt(v) + " × 10¹¹" },
+  };
+  const mapState = { mode: "growth", week: -1, weeks: [], level: [], growth: [], nplants: [], built: false, timer: null };
+  try { const m = localStorage.getItem("covidnl.mapmode"); if (MODES[m]) mapState.mode = m; } catch (e) {}
+
+  function buildMap(){
+    if (!GEO || !state.plants) return;
+    const P = GEO.provinces.length;
+    // mean per plant per week, then weighted by the residents each plant serves in each province
+    let first = Infinity, last = -Infinity;
+    const plantWeek = new Map();
+    for (const [code, p] of state.plants) {
+      if (!GEO.plants[code]) continue;
+      for (const q of p.pts) {
+        const w = mondayOf(q.t), key = code + "|" + w;
+        first = Math.min(first, w); last = Math.max(last, w);
+        const a = plantWeek.get(key) || plantWeek.set(key, { code, w, s: 0, n: 0 }).get(key);
+        a.s += q.v; a.n++;
+      }
+    }
+    const W = Math.round((last - first) / WEEK) + 1;
+    const num = [], den = [], cnt = [];
+    for (let i = 0; i < P; i++) { num.push(new Float64Array(W)); den.push(new Float64Array(W)); cnt.push(new Uint16Array(W)); }
+    for (const a of plantWeek.values()) {
+      const wi = Math.round((a.w - first) / WEEK), v = a.s / a.n;
+      for (const [pv, pop] of GEO.plants[a.code]) { num[pv][wi] += v * pop; den[pv][wi] += pop; cnt[pv][wi]++; }
+    }
+    mapState.weeks = Array.from({ length: W }, (_, i) => first + i * WEEK);
+    mapState.level = num.map((n, pv) => Array.from(n, (s, wi) => den[pv][wi] > 0 ? s / den[pv][wi] : null));
+    mapState.nplants = cnt;
+    // growth: least-squares slope of ln(level) over the trailing 4 weeks, needing 3 or more positive levels
+    mapState.growth = mapState.level.map(lv => lv.map((_, wi) => {
+      const xs = [], ys = [];
+      for (let j = wi - 3; j <= wi; j++) if (j >= 0 && lv[j] > 0) { xs.push(j); ys.push(Math.log(lv[j])); }
+      if (xs.length < 3) return null;
+      const mx = xs.reduce((a, b) => a + b) / xs.length, my = ys.reduce((a, b) => a + b) / ys.length;
+      let sxy = 0, sxx = 0;
+      xs.forEach((x, k) => { sxy += (x - mx) * (ys[k] - my); sxx += (x - mx) ** 2; });
+      return (Math.exp(sxy / sxx) - 1) * 100;
+    }));
+    mapState.built = true;
+    if (mapState.week < 0) mapState.week = W - 1;
+    const range = document.getElementById("mapweek");
+    range.max = String(W - 1); range.value = String(mapState.week);
+    document.querySelector("#c-map [data-timeline]").hidden = false;
+  }
+
+  function drawMap(){
+    const card = document.getElementById("c-map");
+    const mode = MODES[mapState.mode];
+    for (const b of document.querySelectorAll("#mapmode button")) b.setAttribute("aria-pressed", String(b.dataset.mode === mapState.mode));
+    const scale = card.querySelector("[data-scale]");
+    scale.replaceChildren();
+    scale.append(Object.assign(document.createElement("div"), { textContent: mode.caption }));
+    const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = rampCss(); scale.appendChild(bar);
+    const ticks = document.createElement("div"); ticks.className = "ticks";
+    for (const t of mode.ticks) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: t }));
+    scale.appendChild(ticks);
+    const nd = document.createElement("div"); nd.className = "nd"; nd.append(document.createElement("i"), document.createTextNode("No measurements"));
+    scale.appendChild(nd);
+    if (!mapState.built) return;
+
+    const box = card.querySelector("[data-map]");
+    box.querySelector(".empty")?.remove();
+    let svg = box.querySelector("svg");
+    if (!svg) {
+      svg = el("svg", { viewBox: `-4 -4 ${GEO.w + 8} ${GEO.h + 8}`, role: "group", "aria-label": "Map of Dutch provinces" }, null);
+      const defs = el("defs", {}, svg);
+      const pat = el("pattern", { id: "nodata", width: 40, height: 40, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+      el("rect", { width: 40, height: 40, fill: css("--surface") }, pat);
+      el("rect", { width: 14, height: 40, fill: css("--nodata") }, pat);
+      GEO.provinces.forEach((p, i) => {
+        const path = el("path", { d: p.d, class: "pv", tabindex: 0, "data-i": i }, svg);
+        path.addEventListener("pointerenter", () => mapTip(i));
+        path.addEventListener("pointermove", () => mapTip(i));
+        path.addEventListener("focus", () => mapTip(i));
+        path.addEventListener("pointerleave", hideMapTip);
+        path.addEventListener("blur", hideMapTip);
+      });
+      GEO.provinces.forEach((p) => {
+        const t = el("text", { x: p.lx, y: p.ly, "text-anchor": "middle", "dominant-baseline": "middle", "font-size": Math.round(GEO.w / 48), "stroke-width": Math.round(GEO.w / 360) }, svg);
+        t.textContent = p.name;
+      });
+      box.appendChild(svg);
+    }
+    const wi = mapState.week;
+    for (const path of svg.querySelectorAll("path.pv")) {
+      const i = +path.dataset.i, v = mode.value(i, wi);
+      path.setAttribute("fill", v == null ? "url(#nodata)" : mode.color(v));
+      path.setAttribute("aria-label", GEO.provinces[i].name + ": " + (v == null ? "no measurements" : mode.fmt(v)));
+    }
+    const label = "Week of " + fmtDate(mapState.weeks[wi]);
+    document.getElementById("mapweeklabel").textContent = label;
+    document.getElementById("mapweek").value = String(wi);
+
+    // side panel: how many provinces are rising, and the fastest
+    const info = card.querySelector("[data-weekinfo]");
+    const gs = GEO.provinces.map((p, i) => ({ name: p.name, g: mapState.growth[i][wi], lv: mapState.level[i][wi], n: mapState.nplants[i][wi] }));
+    const rising = gs.filter(x => x.g != null && x.g > 0).length, known = gs.filter(x => x.g != null).length;
+    const top = gs.filter(x => x.g != null).sort((a, b) => b.g - a.g)[0];
+    info.replaceChildren();
+    const b = document.createElement("b"); b.textContent = known ? rising + " of " + known + " provinces rising" : "Not enough data"; info.appendChild(b);
+    if (top && top.g > 0) info.appendChild(document.createTextNode("Fastest: " + top.name + ", " + MODES.growth.fmt(top.g)));
+
+    renderTable(card.querySelector("[data-table]"), ["Province", "Growth / week", "Level × 10¹¹", "Plants measured"],
+      gs.slice().sort((a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity)).map(x => [x.name, x.g == null ? "–" : MODES.growth.fmt(x.g).replace(" per week", ""), x.lv == null ? "–" : sewageFmt(x.lv), String(x.n)]));
+  }
+
+  function mapTip(i){
+    const box = document.querySelector("#c-map [data-map]"), tip = tipFor(box), wi = mapState.week;
+    const g = mapState.growth[i][wi], lv = mapState.level[i][wi], n = mapState.nplants[i][wi];
+    tipRows(tip, GEO.provinces[i].name + " · week of " + fmtDate(mapState.weeks[wi]), [
+      { color: g == null ? css("--nodata") : MODES.growth.color(g), value: g == null ? "–" : MODES.growth.fmt(g), name: "" },
+      { color: lv == null ? css("--nodata") : MODES.level.color(lv), value: lv == null ? "no measurements" : MODES.level.fmt(lv), name: "" },
+      { color: "transparent", value: String(n), name: n === 1 ? "plant measured" : "plants measured" },
+    ]);
+    const svg = box.querySelector("svg"), p = GEO.provinces[i], s = svg.clientWidth / (GEO.w + 8);
+    placeTip(box, tip, (p.lx + 4) * s, (p.ly + 4) * s);
+  }
+  function hideMapTip(){ const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none"; }
+
+  function setWeek(wi){ mapState.week = Math.max(0, Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
+  function stopPlay(){ clearInterval(mapState.timer); mapState.timer = null; const b = document.getElementById("mapplay"); b.textContent = "▶"; b.setAttribute("aria-label", "Play"); }
+  document.getElementById("mapweek").addEventListener("input", (e) => { stopPlay(); setWeek(+e.target.value); });
+  document.getElementById("mapplay").addEventListener("click", () => {
+    if (mapState.timer) return stopPlay();
+    if (mapState.week >= mapState.weeks.length - 1) setWeek(0);
+    const b = document.getElementById("mapplay"); b.textContent = "❚❚"; b.setAttribute("aria-label", "Pause");
+    mapState.timer = setInterval(() => { if (mapState.week >= mapState.weeks.length - 1) return stopPlay(); setWeek(mapState.week + 1); }, 180);
+  });
+  document.getElementById("mapmode").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    mapState.mode = b.dataset.mode;
+    try { localStorage.setItem("covidnl.mapmode", mapState.mode); } catch (err) {}
+    drawMap();
+  });
+
   // ---------- plants ----------
-  async function loadPlants(){
-    const btn = document.getElementById("plantload"), sel = document.getElementById("plantsel");
-    btn.disabled = true; btn.textContent = "Loading…";
+  let plantsPromise = null;
+  function loadPlants(){ return plantsPromise || (plantsPromise = fetchPlants()); }
+  async function fetchPlants(){
+    const btns = document.querySelectorAll("[data-plantload]"), sel = document.getElementById("plantsel");
+    for (const b of btns) { b.disabled = true; b.textContent = "Loading…"; }
     try {
       const rows = await load("plants");
       const map = new Map();
@@ -679,14 +895,20 @@
       try { pick = localStorage.getItem("covidnl.plant"); } catch (e) {}
       if (!pick || !map.has(pick)) pick = [...map.keys()].find(k => map.get(k).name === "Utrecht") || active[0]?.[0];
       sel.value = pick; state.plantCode = pick;
-      btn.hidden = true; sel.hidden = false;
+      for (const b of btns) b.hidden = true;
+      sel.hidden = false;
       drawPlant();
+      buildMap(); drawMap();
     } catch (e) {
-      btn.disabled = false; btn.textContent = "Retry loading per-plant data";
-      document.getElementById("c-plant").querySelector("[data-chart]").replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: "Could not load: " + e.message }));
+      plantsPromise = null;
+      for (const b of btns) { b.disabled = false; b.textContent = "Retry loading per-plant data"; }
+      for (const id of ["c-plant", "c-map"]) {
+        const box = document.getElementById(id).querySelector(id === "c-map" ? "[data-map]" : "[data-chart]");
+        box.replaceChildren(Object.assign(document.createElement("div"), { className: "empty", textContent: "Could not load: " + e.message }));
+      }
     }
   }
-  document.getElementById("plantload").addEventListener("click", loadPlants);
+  for (const b of document.querySelectorAll("[data-plantload]")) b.addEventListener("click", loadPlants);
   document.getElementById("plantsel").addEventListener("change", (e) => {
     state.plantCode = e.target.value;
     try { localStorage.setItem("covidnl.plant", state.plantCode); } catch (err) {}
@@ -704,7 +926,8 @@
   });
   syncRange();
   let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawAll, 150); });
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", drawAll);
+  // the map's no-data pattern takes theme colours when it is created, so rebuild it on a theme change
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { document.querySelector("#c-map [data-map] svg")?.remove(); drawAll(); drawMap(); });
 
   // ---------- boot ----------
   async function boot(){
@@ -724,6 +947,7 @@
       status.textContent = "RIVM data published " + (state.report ? fmtDate(day(state.report)) : "recently");
     }
   }
+  drawMap();
   boot();
 })();
 </script>
