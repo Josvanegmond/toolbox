@@ -5,7 +5,9 @@ Inputs (download once into data/raw/, which git ignores):
       https://api.pdok.nl/cbs/gebiedsindelingen/ogc/v1/collections/provincie_gegeneraliseerd/items?f=json&jaarcode=2024&limit=50&crs=http://www.opengis.net/def/crs/EPSG/0/28992
   provincies-labelpoint-2024.json    PDOK, same API, collection provincie_labelpoint (label positions)
       https://api.pdok.nl/cbs/gebiedsindelingen/ogc/v1/collections/provincie_labelpoint/items?f=json&jaarcode=2024&limit=50&crs=http://www.opengis.net/def/crs/EPSG/0/28992
-  cbs-inwoners-per-rwzi-2024.xlsx   CBS, inwoners per rioolwaterzuiveringsinstallatie 1-1-2024 (Tabel 1)
+  rsa-rwzi.json                      PDOK/Rijkswaterstaat Richtlijn Stedelijk Afvalwater, RWZI locations (uwwcode NL01008 = RIVM code 1008)
+      https://service.pdok.nl/rws/richtlijn-stedelijk-afvalwater/wfs/v2_0?request=GetFeature&service=WFS&version=2.0.0&typeNames=richtlijnstedelijkafvalwater:rsa_rwzi&outputFormat=application/json&srsName=EPSG:28992
+  cbs-inwoners-per-rwzi-2024.xlsx  CBS, inwoners per rioolwaterzuiveringsinstallatie 1-1-2024 (Tabel 1)
       https://www.cbs.nl/nl-nl/maatwerk/2025/04/inwoners-per-rioolwaterzuiveringsinstallatie-1-1-2024
   cbs-gebieden-2024.json             CBS StatLine 85755NED "Gebieden in Nederland 2024" (gemeente -> provincie)
       https://opendata.cbs.nl/ODataApi/odata/85755NED/TypedDataSet?$format=json
@@ -94,14 +96,23 @@ def main():
         plants[str(r[1])][index[gm2pv[r[7]]]] += r[5] * float(r[9])
     plants = {code: [[pv, round(pop)] for pv, pop in sorted(v.items()) if round(pop) > 0] for code, v in plants.items()}
 
-    data = {"w": width, "h": height, "provinces": provinces, "plants": plants}
+    # station locations, keyed by the numeric code RIVM uses
+    stations = {}
+    for f in json.load(open(RAW / "rsa-rwzi.json"))["features"]:
+        code = f["properties"]["uwwcode"]
+        if not (code.startswith("NL") and code[2:].isdigit()):
+            continue
+        x, y = f["geometry"]["coordinates"][0] if f["geometry"]["type"] == "MultiPoint" else f["geometry"]["coordinates"]
+        stations[str(int(code[2:]))] = [round((x - x0) / UNIT), round((y1 - y) / UNIT)]
+
+    data = {"w": width, "h": height, "provinces": provinces, "plants": plants, "stations": stations}
     block = "const GEO = " + json.dumps(data, separators=(",", ":"), ensure_ascii=False) + ";"
     html = PAGE.read_text()
     new, n = re.subn(r"(/\* GEO:BEGIN[^\n]*\n).*?(\n\s*/\* GEO:END \*/)", lambda m: m.group(1) + "  " + block + m.group(2), html, flags=re.S)
     if n != 1:
         raise SystemExit("GEO markers not found in " + str(PAGE))
     PAGE.write_text(new)
-    print(f"{len(provinces)} provinces, {len(plants)} plants, {len(block) / 1024:.0f} KB embedded")
+    print(f"{len(provinces)} provinces, {len(plants)} plants, {len(stations)} station locations, {len(block) / 1024:.0f} KB embedded")
 
 
 if __name__ == "__main__":
