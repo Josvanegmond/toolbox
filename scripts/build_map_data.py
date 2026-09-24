@@ -88,7 +88,8 @@ def main():
     plants = collections.defaultdict(lambda: collections.defaultdict(float))
     wb = openpyxl.load_workbook(RAW / "cbs-inwoners-per-rwzi-2024.xlsx", read_only=True)
     for r in list(wb["Tabel 1"].iter_rows(values_only=True))[4:]:
-        if not r or r[6] != "GM" or r[7] not in gm2pv:
+        # 99998/99999 are CBS's "niet ingedeeld" / "buiten RWZI herkomstgebied" rows: residents no plant serves
+        if not r or r[6] != "GM" or r[7] not in gm2pv or str(r[1]) in ("99998", "99999"):
             continue
         plants[str(r[1])][index[gm2pv[r[7]]]] += r[5] * float(r[9])
     plants = {code: [[pv, round(pop)] for pv, pop in sorted(v.items()) if round(pop) > 0] for code, v in plants.items()}
