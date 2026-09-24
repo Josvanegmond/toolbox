@@ -965,23 +965,26 @@
 
   const WEEK = 7 * DAY;
   const mondayOf = (t) => t - ((new Date(t).getUTCDay() + 6) % 7) * DAY;
-  // white -> orange -> red; the same stops draw the legend
-  const RAMP = [[0, [255,255,255]], [0.25, [253,219,176]], [0.5, [246,152,60]], [0.75, [226,87,43]], [1, [178,24,32]]];
-  function rampColor(x){
+  // growth: white -> purple; level: white -> orange -> red. The same stops draw the legend
+  const RAMPS = {
+    growth: [[0, [255,255,255]], [0.25, [232,221,245]], [0.5, [191,160,226]], [0.75, [139,93,196]], [1, [84,39,143]]],
+    level: [[0, [255,255,255]], [0.25, [253,219,176]], [0.5, [246,152,60]], [0.75, [226,87,43]], [1, [178,24,32]]],
+  };
+  function rampColor(ramp, x){
     x = Math.max(0, Math.min(1, x));
-    for (let i = 1; i < RAMP.length; i++) {
-      const [p1, c1] = RAMP[i], [p0, c0] = RAMP[i - 1];
+    for (let i = 1; i < ramp.length; i++) {
+      const [p1, c1] = ramp[i], [p0, c0] = ramp[i - 1];
       if (x <= p1) { const f = (x - p0) / (p1 - p0); return "rgb(" + c0.map((c, k) => Math.round(c + (c1[k] - c) * f)).join(",") + ")"; }
     }
   }
-  const rampCss = () => "linear-gradient(to right," + RAMP.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
+  const rampCss = (ramp) => "linear-gradient(to right," + ramp.map(([p, c]) => `rgb(${c.join(",")}) ${p * 100}%`).join(",") + ")";
   const pctFmtSigned = (g) => (g > 0 ? "+" : g < 0 ? "−" : "") + f0.format(Math.abs(g)) + "%";
   const MODES = {
     // growth: 0%/week or less is white, +25% orange, +50% or more red
-    growth: { color: (g) => rampColor(g / 50), ticks: () => ["≤ 0%", "+25%", "≥ +50%"], caption: () => t("cap_growth"),
+    growth: { color: (g) => rampColor(RAMPS.growth, g / 50), ticks: () => ["≤ 0%", "+25%", "≥ +50%"], caption: () => t("cap_growth"),
       fmt: (g) => pctFmtSigned(g) + " " + t("per_week") },
     // level: log scale from 10 to 1,000 × 10¹¹
-    level: { color: (v) => rampColor((Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: () => ["≤ 10", "100", "≥ " + f0.format(1000)], caption: () => t("cap_level"),
+    level: { color: (v) => rampColor(RAMPS.level, (Math.log10(Math.max(v / 1e11, 1e-9)) - 1) / 2), ticks: () => ["≤ 10", "100", "≥ " + f0.format(1000)], caption: () => t("cap_level"),
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
   const mapState = { mode: "growth", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
@@ -1093,7 +1096,7 @@
     const mode = MODES[mapState.mode], scale = document.querySelector("#c-map [data-scale]");
     scale.replaceChildren();
     scale.appendChild(Object.assign(document.createElement("div"), { className: "cap", textContent: mode.caption() }));
-    const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = rampCss(); scale.appendChild(bar);
+    const bar = document.createElement("div"); bar.className = "bar"; bar.style.background = rampCss(RAMPS[mapState.mode]); scale.appendChild(bar);
     const ticks = document.createElement("div"); ticks.className = "ticks";
     for (const x of mode.ticks()) ticks.appendChild(Object.assign(document.createElement("span"), { textContent: x }));
     scale.appendChild(ticks);
