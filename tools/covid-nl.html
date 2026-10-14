@@ -128,6 +128,8 @@
   .chart{ position:relative; width:100%; height:240px; }
   .chart.tall{ height:300px; }
   .chart svg{ display:block; width:100%; height:100%; overflow:visible; }
+  /* a vertical swipe on a chart scrolls the page; a sideways swipe reads off values */
+  .chart svg{ touch-action:pan-y; }
   .chart svg:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
   .chart.loading{ opacity:.45; }
   .empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--muted); font-size:13px; }
@@ -357,6 +359,7 @@
           <button type="button" data-view="station" aria-pressed="false" data-i18n="v_station"></button>
         </div>
         <select id="provsel" hidden data-i18n-aria="col_province"></select>
+        <select id="provst" hidden data-i18n-aria="station"></select>
         <select id="plantsel" hidden data-i18n-aria="station"></select>
       </div>
       <div class="legend" data-legend></div>
@@ -489,10 +492,10 @@
       m_sampling_map: "Sinds jul 2025: ~40% van de stations per week",
       m_latest: "Laatste week", m_latest_d: "Kan onvolledig zijn; RIVM past cijfers achteraf aan",
       m_leftout: "Weggelaten", m_leftout_d: "4 Gelderse stations, gesloten in 2020–21 (alleen als stip)",
-      plant_h: "Virus in rioolwater, per station", plant_sub: "Alle stations in een provincie, of één station · klik op een provincie of station op de kaart om te kiezen",
+      plant_h: "Virus in rioolwater, per station", plant_sub: "Alle stations in een provincie, of één station · tik op een lijn of kies een station in de lijst",
       station: "Rioolwaterstation",
       view_aria: "Weergave", v_province: "Per provincie", v_station: "Eén station",
-      province_avg: "Provinciegemiddelde", st_lines: "Stations ({n})",
+      pick_station: "Kies een station…", province_avg: "Provinciegemiddelde", st_lines: "Stations ({n})",
       aria_prov: "Virus in rioolwater bij alle stations in {name}",
       clipped: "Pieken boven {v} × 10¹¹ lopen boven de grafiek uit; beweeg erover voor de waarde.",
       zoom_in: "Inzoomen", zoom_out: "Uitzoomen", zoom_reset: "Zoom herstellen",
@@ -565,10 +568,10 @@
       m_sampling_map: "Since Jul 2025: ~40% of stations per week",
       m_latest: "Latest week", m_latest_d: "Can be incomplete; RIVM revises",
       m_leftout: "Left out", m_leftout_d: "4 Gelderland stations closed 2020–21 (dots only)",
-      plant_h: "Virus in sewage, per station", plant_sub: "All stations in a province, or one station · click a province or station on the map to select it",
+      plant_h: "Virus in sewage, per station", plant_sub: "All stations in a province, or one station · tap a line or choose a station from the list",
       station: "Sewage station",
       view_aria: "View", v_province: "By province", v_station: "One station",
-      province_avg: "Province average", st_lines: "Stations ({n})",
+      pick_station: "Choose a station…", province_avg: "Province average", st_lines: "Stations ({n})",
       aria_prov: "Sewage virus load at all stations in {name}",
       clipped: "Peaks above {v} × 10¹¹ run off the top of the chart; hover for the value.",
       zoom_in: "Zoom in", zoom_out: "Zoom out", zoom_reset: "Reset zoom",
@@ -892,7 +895,7 @@
   }
 
   // Many stations at once: every station a faint line, the province average and the national
-  // average on top. The station nearest the pointer is picked out; a click pins it.
+  // average on top. Tapping a line selects that station (opt.hi); moving the pointer only reads off values.
   // lines: [{code, name, pts}]; opt: {avg, nat, hi, t0, label, onPick}
   function multiChart(box, lines, opt){
     box.querySelector("svg")?.remove();
@@ -939,55 +942,78 @@
     const cross = el("line", { y1: M.t, y2: H - M.b, stroke: faint, "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
     const dot = el("circle", { r: 4.5, fill: css("--s1"), stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg);
     const tip = tipFor(box);
-    let cur = null, curPt = null;
     const near = (pts, tt, tol) => { const q = nearest(pts, tt); return q && Math.abs(q.t - tt) <= tol ? q : null; };
-    function show(l, q){
-      cur = l.code; curPt = q; setHi(l.code);
-      const cx = x(q.t), cy = y(Math.min(q.v, yMax));
-      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
-      dot.setAttribute("cx", cx); dot.setAttribute("cy", cy); dot.setAttribute("visibility", "visible");
-      const a = near(opt.avg, q.t, 4 * DAY), n = near(opt.nat, q.t, 4 * DAY);
-      tipRows(tip, l.name, [
-        { color: css("--s1"), value: sewageFmt(q.v) + " × 10¹¹", name: fmtDate(q.t) },
-        { color: css("--s2"), value: a ? sewageFmt(a.v) : "–", name: t("province_avg") },
-        { color: faint, value: n ? sewageFmt(n.v) : "–", name: t("national_avg") },
-      ]);
-      placeTip(box, tip, cx, cy);
+    const hiLine = byCode.get(opt.hi);
+    const tAt = (px) => t0 + (px - M.l) / (W - M.l - M.r) * (t1 - t0);
+    const local = (ev) => { const r = svg.getBoundingClientRect(); return [(ev.clientX - r.left) * (W / r.width), (ev.clientY - r.top) * (H / r.height)]; };
+    // where a station's drawn line is at time tt, in chart pixels (null where the line has a gap)
+    function lineY(l, tt){
+      const p = l.pts;
+      let lo = 0, hi = p.length - 1;
+      if (hi < 0 || tt < p[0].t || tt > p[hi].t) return null;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p[m].t <= tt) lo = m; else hi = m; }
+      const a = p[lo], b = p[hi];
+      if (b.t - a.t > gap) return null;
+      const v = b.t === a.t ? a.v : a.v + (b.v - a.v) * (tt - a.t) / (b.t - a.t);
+      return Math.max(M.t, y(v));
     }
-    function hide(){ cur = null; curPt = null; setHi(opt.hi); cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+    // the station whose line passes under the pointer, within tol pixels
+    function lineAt(px, py, tol){
+      const tt = tAt(px);
+      let best = null, bd = tol;
+      for (const l of lines) { const ly = lineY(l, tt); if (ly != null && Math.abs(ly - py) < bd) { bd = Math.abs(ly - py); best = l; } }
+      return best;
+    }
+    // reading values: the crosshair follows the pointer and shows the selected station,
+    // the province and the country; it never changes which station is selected
+    function show(tt){
+      const q = hiLine ? near(hiLine.pts, tt, 10 * DAY) : null;
+      const a = near(opt.avg, tt, 4 * DAY), n = near(opt.nat, tt, 4 * DAY);
+      const at = q ? q.t : a ? a.t : n ? n.t : tt;
+      const cx = x(at);
+      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+      if (q) { dot.setAttribute("cx", cx); dot.setAttribute("cy", y(Math.min(q.v, yMax))); dot.setAttribute("visibility", "visible"); }
+      else dot.setAttribute("visibility", "hidden");
+      const rows = [];
+      if (hiLine) rows.push({ color: css("--s1"), value: q ? sewageFmt(q.v) : "–", name: hiLine.name });
+      rows.push({ color: css("--s2"), value: a ? sewageFmt(a.v) : "–", name: t("province_avg") });
+      rows.push({ color: faint, value: n ? sewageFmt(n.v) : "–", name: t("national_avg") });
+      tipRows(tip, fmtDate(at), rows);
+      const ref = q || a || n;
+      placeTip(box, tip, cx, ref ? y(Math.min(ref.v, yMax)) : H / 2);
+    }
+    function hide(){ cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
     svg.addEventListener("pointermove", (ev) => {
-      const r = svg.getBoundingClientRect();
-      const px = (ev.clientX - r.left) * (W / r.width), py = (ev.clientY - r.top) * (H / r.height);
-      const tt = t0 + (px - M.l) / (W - M.l - M.r) * (t1 - t0);
-      // the station whose line passes closest to the pointer, among those measured within 10 days
-      let best = null, bq = null, bd = Infinity;
-      for (const l of lines) {
-        const q = near(l.pts, tt, 10 * DAY);
-        if (!q) continue;
-        const d = Math.abs(y(Math.min(q.v, yMax)) - py) + Math.abs(x(q.t) - px) * 0.3;
-        if (d < bd) { bd = d; best = l; bq = q; }
-      }
-      if (best) show(best, bq); else hide();
+      const [px, py] = local(ev);
+      if (px < M.l || px > W - M.r) return hide();
+      show(tAt(px));
+      if (ev.pointerType === "mouse") svg.style.cursor = lineAt(px, py, 8) ? "pointer" : "";
     });
     svg.addEventListener("pointerleave", hide);
     svg.addEventListener("blur", hide);
-    svg.addEventListener("click", () => { if (cur) opt.onPick(cur); });
-    // keyboard: up/down step through the stations, left/right through the picked station's measurements
+    // a tap or click on a line selects that station; on the selected line again, clears it
+    svg.addEventListener("click", (ev) => {
+      const [px, py] = local(ev);
+      const l = lineAt(px, py, ev.pointerType === "mouse" ? 8 : 16);
+      if (l) opt.onPick(l.code === opt.hi ? null : l.code);
+    });
+    // keyboard: up/down select the next station, left/right step through the measurements, Escape clears
     const withPts = lines.filter(l => l.pts.length);
+    let kIdx = -1;
     svg.addEventListener("keydown", (ev) => {
-      if (!withPts.length) return;
       if (ev.key === "ArrowUp" || ev.key === "ArrowDown") {
+        if (!withPts.length) return;
         ev.preventDefault();
-        let i = withPts.findIndex(l => l.code === (cur || opt.hi));
+        let i = withPts.findIndex(l => l.code === opt.hi);
         i = i < 0 ? 0 : (i + (ev.key === "ArrowDown" ? 1 : -1) + withPts.length) % withPts.length;
-        const l = withPts[i]; show(l, l.pts[l.pts.length - 1]);
+        opt.onPick(withPts[i].code, true);
       } else if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+        const pts = hiLine ? hiLine.pts : opt.avg;
+        if (!pts.length) return;
         ev.preventDefault();
-        const l = byCode.get(cur || opt.hi) || withPts[0];
-        let i = curPt ? l.pts.indexOf(curPt) : l.pts.length;
-        i = Math.max(0, Math.min(l.pts.length - 1, i + (ev.key === "ArrowRight" ? 1 : -1)));
-        show(l, l.pts[i]);
-      } else if (ev.key === "Enter" && cur) opt.onPick(cur);
+        kIdx = kIdx < 0 ? pts.length - 1 : Math.max(0, Math.min(pts.length - 1, kIdx + (ev.key === "ArrowRight" ? 1 : -1)));
+        show(pts[kIdx].t);
+      } else if (ev.key === "Escape" && opt.hi) opt.onPick(null, true);
     });
     box.appendChild(svg);
     return { clipped, yMax };
@@ -1126,6 +1152,7 @@
     document.getElementById("plantview").hidden = !mapState.built;
     for (const b of document.querySelectorAll("#plantview button")) b.setAttribute("aria-pressed", String(b.dataset.view === (prov ? "province" : "station")));
     document.getElementById("provsel").hidden = !prov;
+    document.getElementById("provst").hidden = !prov;
     document.getElementById("plantsel").hidden = prov;
     return prov;
   }
@@ -1149,12 +1176,16 @@
     renderLegend(card.querySelector("[data-legend]"), legend);
     const res = multiChart(card.querySelector("[data-chart]"), lines, {
       avg, nat, hi: state.hi, t0: c, label: tf("aria_prov", { name: P.name }),
-      onPick: (code) => {
-        state.hi = state.hi === code ? null : code;
-        if (state.hi) rememberStation(state.hi);
-        drawPlant(); drawMap();
+      onPick: (code, refocus) => {
+        pickInProvince(code);
+        if (refocus) card.querySelector("[data-chart] svg")?.focus();
       },
     });
+    // the station list holds the province's stations with data in view
+    const pick = document.getElementById("provst");
+    pick.replaceChildren(Object.assign(document.createElement("option"), { value: "", textContent: t("pick_station") }),
+      ...lines.map(l => Object.assign(document.createElement("option"), { value: l.code, textContent: l.name })));
+    pick.value = state.hi || "";
     const note = card.querySelector("[data-clipnote]");
     note.hidden = !res.clipped;
     if (res.clipped) note.textContent = tf("clipped", { v: sewageFmt(res.yMax) });
@@ -1164,6 +1195,12 @@
       .sort((a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity));
     renderTable(card.querySelector("[data-table]"), [t("col_station"), t("col_growth"), t("col_level"), t("col_last")],
       rows.map(r => [r.name, r.g == null ? "–" : pctFmtSigned(r.g), sewageFmt(r.q.v), fmtDate(r.q.t)]));
+  }
+  // select a station in the province chart (null clears), and keep the map and list in step
+  function pickInProvince(code){
+    state.hi = code || null;
+    if (state.hi) rememberStation(state.hi);
+    drawPlant(); drawMap();
   }
   function drawPlant(){
     const card = document.getElementById("c-plant");
@@ -1810,6 +1847,7 @@
       .map(([p, i]) => Object.assign(document.createElement("option"), { value: String(i), textContent: p.name })));
     if (state.pv != null) sel.value = String(state.pv);
   }
+  document.getElementById("provst").addEventListener("change", (e) => pickInProvince(e.target.value));
   document.getElementById("provsel").addEventListener("change", (e) => {
     setProvince(+e.target.value); state.hi = null;
     drawPlant(); drawMap();
