@@ -128,6 +128,8 @@
   .chart{ position:relative; width:100%; height:240px; }
   .chart.tall{ height:300px; }
   .chart svg{ display:block; width:100%; height:100%; overflow:visible; }
+  /* a vertical swipe on a chart scrolls the page; a sideways swipe reads off values */
+  .chart svg{ touch-action:pan-y; }
   .chart svg:focus-visible{ outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
   .chart.loading{ opacity:.45; }
   .empty{ display:flex; align-items:center; justify-content:center; height:100%; color:var(--muted); font-size:13px; }
@@ -179,7 +181,31 @@
   .map svg.catch-mode path.pv{ fill:none; pointer-events:none; stroke:var(--ink); stroke-opacity:.55; stroke-width:1.3; }
   .map text{ pointer-events:none; font-weight:600; fill:#1b1b1b; paint-order:stroke; stroke:rgba(255,255,255,.8); stroke-linejoin:round; }
   .map circle.st{ cursor:pointer; }
-  .map circle.st.sel{ stroke:var(--ink); stroke-width:10; }
+  /* the selected dot's ring width is set in JS, so it can shrink with the zoom */
+  .map circle.st.sel{ stroke:var(--ink); }
+  .map path.pv.on{ stroke:var(--ink); stroke-width:2.5; }
+  .map svg.catch-mode path.pv.on{ stroke-opacity:1; stroke-width:2.5; }
+  /* at 1:1 one finger scrolls the page and two fingers zoom the map; zoomed in, one finger pans */
+  .map svg{ touch-action:pan-x pan-y; }
+  .map svg.zoomed{ touch-action:none; cursor:grab; }
+  .map svg.dragging{ cursor:grabbing; }
+  .zoomctl{ position:absolute; top:6px; right:6px; z-index:5; display:flex; flex-direction:column; gap:4px; }
+  .zoomctl[hidden]{ display:none; }
+  .zoomctl button{
+    font:inherit; font-size:17px; line-height:1; width:32px; height:32px; padding:0;
+    border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink);
+    box-shadow:var(--shadow); cursor:pointer;
+  }
+  .zoomctl button:hover:not(:disabled){ border-color:var(--accent); }
+  .zoomctl button:disabled{ color:var(--muted); opacity:.55; cursor:default; }
+  .zoomctl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .zoomhint{
+    position:absolute; inset:0; z-index:6; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,13,14,.5); color:#ffffff; font-size:14px; font-weight:600; border-radius:8px;
+    pointer-events:none; opacity:0; transition:opacity .2s;
+  }
+  .zoomhint.on{ opacity:1; }
+  @media (prefers-reduced-motion: reduce){ .zoomhint{ transition:none; } }
   .mapside{ display:flex; flex-direction:column; gap:12px; font-size:12px; color:var(--muted); min-width:0; }
   .scale{ position:relative; }
   .scale .cap{ color:var(--ink); font-weight:600; }
@@ -288,7 +314,15 @@
       </div>
       <div class="mapwrap">
         <div>
-          <div class="map" data-map><div class="empty"><button type="button" class="linkbtn" id="maploadbtn" data-plantload></button></div></div>
+          <div class="map" data-map>
+            <div class="zoomctl" data-zoomctl hidden>
+              <button type="button" data-zoom="in" data-i18n-aria="zoom_in">+</button>
+              <button type="button" data-zoom="out" data-i18n-aria="zoom_out">&minus;</button>
+              <button type="button" data-zoom="reset" data-i18n-aria="zoom_reset">&#8634;</button>
+            </div>
+            <div class="zoomhint" data-zoomhint aria-hidden="true"></div>
+            <div class="empty"><button type="button" class="linkbtn" id="maploadbtn" data-plantload></button></div>
+          </div>
           <div class="timeline" data-timeline hidden>
             <button type="button" class="play" id="mapplay">▶</button>
             <input type="range" id="mapweek" min="0" max="0" value="0" data-i18n-aria="week">
@@ -320,10 +354,17 @@
       <h2 data-i18n="plant_h"></h2>
       <p class="sub" data-i18n="plant_sub"></p>
       <div class="plantbar">
+        <div class="seg" role="group" data-i18n-aria="view_aria" id="plantview" hidden>
+          <button type="button" data-view="province" aria-pressed="true" data-i18n="v_province"></button>
+          <button type="button" data-view="station" aria-pressed="false" data-i18n="v_station"></button>
+        </div>
+        <select id="provsel" hidden data-i18n-aria="col_province"></select>
+        <select id="provst" hidden data-i18n-aria="station"></select>
         <select id="plantsel" hidden data-i18n-aria="station"></select>
       </div>
       <div class="legend" data-legend></div>
       <div class="chart tall" data-chart><div class="empty"><button type="button" class="linkbtn" id="plantload" data-plantload></button></div></div>
+      <p class="note" data-clipnote hidden></p>
       <div class="foot"><details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
         <span><span data-i18n="source">Source</span>: <a href="https://data.rivm.nl/meta/srv/dut/catalog.search#/metadata/a2960b68-9d3f-4dc3-9485-600570cd52b9" target="_blank" rel="noopener">RIVM</a> <span class="pub" data-pub="plants"></span></span></div>
     </section>
@@ -451,8 +492,14 @@
       m_sampling_map: "Sinds jul 2025: ~40% van de stations per week",
       m_latest: "Laatste week", m_latest_d: "Kan onvolledig zijn; RIVM past cijfers achteraf aan",
       m_leftout: "Weggelaten", m_leftout_d: "4 Gelderse stations, gesloten in 2020–21 (alleen als stip)",
-      plant_h: "Virus in rioolwater, per station", plant_sub: "Eén station vs landelijk · klik op een station of verzorgingsgebied op de kaart om het te kiezen",
+      plant_h: "Virus in rioolwater, per station", plant_sub: "Alle stations in een provincie, of één station · tik op een lijn of kies een station in de lijst",
       station: "Rioolwaterstation",
+      view_aria: "Weergave", v_province: "Per provincie", v_station: "Eén station",
+      pick_station: "Kies een station…", province_avg: "Provinciegemiddelde", st_lines: "Stations ({n})",
+      aria_prov: "Virus in rioolwater bij alle stations in {name}",
+      clipped: "Pieken boven {v} × 10¹¹ lopen boven de grafiek uit; beweeg erover voor de waarde.",
+      zoom_in: "Inzoomen", zoom_out: "Uitzoomen", zoom_reset: "Zoom herstellen",
+      zoom_hint: "Gebruik {key} + scrollen om te zoomen",
       pos_h: "Positieve tests, Infectieradar", pos_sub: "% deelnemers met een positieve test, per week",
       ari_h: "Luchtwegklachten, Infectieradar", ari_sub: "% met klachten in de afgelopen week · alle infecties",
       var_h: "Varianten", var_sub: "Aandeel van de gesequencete monsters per maand",
@@ -521,8 +568,14 @@
       m_sampling_map: "Since Jul 2025: ~40% of stations per week",
       m_latest: "Latest week", m_latest_d: "Can be incomplete; RIVM revises",
       m_leftout: "Left out", m_leftout_d: "4 Gelderland stations closed 2020–21 (dots only)",
-      plant_h: "Virus in sewage, per station", plant_sub: "One station vs national · click a station or catchment area on the map to select it",
+      plant_h: "Virus in sewage, per station", plant_sub: "All stations in a province, or one station · tap a line or choose a station from the list",
       station: "Sewage station",
+      view_aria: "View", v_province: "By province", v_station: "One station",
+      pick_station: "Choose a station…", province_avg: "Province average", st_lines: "Stations ({n})",
+      aria_prov: "Sewage virus load at all stations in {name}",
+      clipped: "Peaks above {v} × 10¹¹ run off the top of the chart; hover for the value.",
+      zoom_in: "Zoom in", zoom_out: "Zoom out", zoom_reset: "Reset zoom",
+      zoom_hint: "Use {key} + scroll to zoom",
       pos_h: "Positive tests, Infectieradar", pos_sub: "% of participants with a positive test, per week",
       ari_h: "Respiratory symptoms, Infectieradar", ari_sub: "% with symptoms in the past week · all infections",
       var_h: "Variants", var_sub: "Share of sequenced samples per month",
@@ -615,8 +668,12 @@
   const pctFmt = (v) => f1.format(v) + "%";
 
   // ---------- state ----------
-  const state = { months: 12, data: {}, plants: null, plantCode: null, pub: {}, failed: [] };
-  try { const m = localStorage.getItem("covidnl.months"); if (m !== null) state.months = +m; } catch (e) {}
+  // plantView: "province" (every station in province pv, station hi picked out) or "station" (plantCode alone)
+  const state = { months: 12, data: {}, plants: null, plantCode: null, pub: {}, failed: [], plantView: "province", pv: null, hi: null };
+  try {
+    const m = localStorage.getItem("covidnl.months"); if (m !== null) state.months = +m;
+    const v = localStorage.getItem("covidnl.plantview"); if (v === "province" || v === "station") state.plantView = v;
+  } catch (e) {}
 
   function cutoff(){
     if (!state.months) return -Infinity;
@@ -685,7 +742,9 @@
     if (items.length < 2) return;
     for (const it of items) {
       const s = document.createElement("span");
-      const i = document.createElement("i"); if (box) i.className = "box"; i.style.background = it.color;
+      const i = document.createElement("i"); if (box) i.className = "box";
+      i.style.background = it.dash ? `repeating-linear-gradient(90deg, ${it.color} 0 4px, transparent 4px 7px)` : it.color;
+      if (it.faint) i.style.opacity = "0.6";
       s.append(i, document.createTextNode(it.name)); node.appendChild(s);
     }
   }
@@ -694,6 +753,32 @@
     if (hi < 0) return null;
     while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (pts[mid].t < t) lo = mid; else hi = mid; }
     return Math.abs(pts[lo].t - t) <= Math.abs(pts[hi].t - t) ? pts[lo] : pts[hi];
+  }
+
+  // gridlines with y labels, and month or year labels along the bottom
+  function drawAxes(svg, a){
+    const g = el("g", {}, svg);
+    for (const v of a.yt.ticks) {
+      const yy = a.y(v);
+      el("line", { x1: a.M.l, x2: a.W - a.M.r, y1: yy, y2: yy, stroke: v === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }, g);
+      const tx = el("text", { x: a.M.l - 6, y: yy + 3.5, "text-anchor": "end", "font-size": 11, fill: css("--tick") }, g);
+      tx.textContent = a.yFmt(v, (String(a.yt.ticks[1] ?? 1).split(".")[1] || "").length);
+    }
+    for (const tk of timeTicks(a.t0, a.t1, a.W - a.M.l - a.M.r)) {
+      const tx = el("text", { x: a.x(tk.t), y: a.H - 6, "text-anchor": "middle", "font-size": 11, fill: css("--tick") }, g);
+      tx.textContent = tk.label;
+    }
+    return g;
+  }
+  // an SVG path through pts, lifting the pen across gaps longer than maxGap
+  function linePath(pts, x, y, maxGap){
+    let d = "", prev = null;
+    for (const p of pts) {
+      const gap = prev && maxGap && (p.t - prev.t) > maxGap;
+      d += (prev && !gap ? "L" : "M") + x(p.t).toFixed(1) + "," + y(p.v).toFixed(1);
+      prev = p;
+    }
+    return d;
   }
 
   // Line chart. series: [{name, color, width, pts:[{t,v}]}]
@@ -710,25 +795,10 @@
     const y = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
     const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: "0", "aria-label": opt.label }, null);
 
-    const g = el("g", {}, svg);
-    for (const v of yt.ticks) {
-      const yy = y(v);
-      el("line", { x1: M.l, x2: W - M.r, y1: yy, y2: yy, stroke: v === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }, g);
-      const tx = el("text", { x: M.l - 6, y: yy + 3.5, "text-anchor": "end", "font-size": 11, fill: css("--tick") }, g);
-      tx.textContent = opt.yFmt(v, (String(yt.ticks[1] ?? 1).split(".")[1] || "").length);
-    }
-    for (const tk of timeTicks(t0, t1, W - M.l - M.r)) {
-      const tx = el("text", { x: x(tk.t), y: H - 6, "text-anchor": "middle", "font-size": 11, fill: css("--tick") }, g);
-      tx.textContent = tk.label;
-    }
+    drawAxes(svg, { W, H, M, x, y, yt, t0, t1, yFmt: opt.yFmt });
     for (const s of series) {
       if (!s.pts.length) continue;
-      let d = "", pen = false, prev = null;
-      for (const p of s.pts) {
-        const gap = prev && s.maxGap && (p.t - prev.t) > s.maxGap;
-        d += (pen && !gap ? "L" : "M") + x(p.t).toFixed(1) + "," + y(p.v).toFixed(1);
-        pen = true; prev = p;
-      }
+      const d = linePath(s.pts, x, y, s.maxGap);
       el("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
       if (s.pts.length < 60 && s.dots !== false) {
         for (const p of s.pts) el("circle", { cx: x(p.t), cy: y(p.v), r: 2.5, fill: s.color }, svg);
@@ -822,6 +892,131 @@
       g.addEventListener("focus", showTip); g.addEventListener("blur", hideTip);
     });
     box.appendChild(svg);
+  }
+
+  // Many stations at once: every station a faint line, the province average and the national
+  // average on top. Tapping a line selects that station (opt.hi); moving the pointer only reads off values.
+  // lines: [{code, name, pts}]; opt: {avg, nat, hi, t0, label, onPick}
+  function multiChart(box, lines, opt){
+    box.querySelector("svg")?.remove();
+    box.querySelector(".empty")?.remove();
+    const stv = lines.flatMap(l => l.pts.map(p => p.v)).sort((a, b) => a - b);
+    const refs = [...opt.avg, ...opt.nat];
+    if (!stv.length && !refs.length) {
+      const e = document.createElement("div"); e.className = "empty"; e.textContent = t("no_data_range"); box.appendChild(e);
+      return { clipped: false };
+    }
+    const W = box.clientWidth, H = box.clientHeight;
+    const M = { l: 44, r: 10, t: 10, b: 24 };
+    const ts = [...lines.flatMap(l => l.pts.map(p => p.t)), ...refs.map(p => p.t)];
+    const t0 = isFinite(opt.t0) ? opt.t0 : Math.min(...ts), t1 = Math.max(...ts);
+    // a single station's spike would flatten everything else, so the scale stops at the 99th percentile
+    const q99 = stv.length ? stv[Math.floor(0.99 * (stv.length - 1))] : 0;
+    const yt = niceTicks(Math.max(q99, ...refs.map(p => p.v))), yMax = yt.max;
+    const clipped = stv.length > 0 && stv[stv.length - 1] > yMax;
+    const x = (tt) => M.l + (t1 === t0 ? 0.5 : (tt - t0) / (t1 - t0)) * (W - M.l - M.r);
+    const y = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", tabindex: "0", "aria-label": opt.label }, null);
+    drawAxes(svg, { W, H, M, x, y, yt, t0, t1, yFmt: sewageFmt });
+    const clipId = "mc" + Math.random().toString(36).slice(2, 8);
+    el("rect", { x: M.l, y: M.t - 3, width: W - M.l - M.r + 4, height: H - M.t - M.b + 3 }, el("clipPath", { id: clipId }, el("defs", {}, svg)));
+    const plot = el("g", { "clip-path": `url(#${clipId})` }, svg);
+    const faint = css("--tick"), gap = 35 * DAY;
+    for (const l of lines) {
+      if (l.pts.length) el("path", { d: linePath(l.pts, x, y, gap), fill: "none", stroke: faint, "stroke-opacity": 0.45, "stroke-width": 1, "stroke-linejoin": "round" }, plot);
+    }
+    if (opt.nat.length) el("path", { d: linePath(opt.nat, x, y, 9 * DAY), fill: "none", stroke: faint, "stroke-width": 1.5, "stroke-dasharray": "5 4" }, plot);
+    if (opt.avg.length) el("path", { d: linePath(opt.avg, x, y, 15 * DAY), fill: "none", stroke: css("--s2"), "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot);
+    const hiG = el("g", {}, plot);
+    const byCode = new Map(lines.map(l => [l.code, l]));
+    function setHi(code){
+      hiG.replaceChildren();
+      const l = byCode.get(code);
+      if (!l || !l.pts.length) return;
+      const col = css("--s1");
+      el("path", { d: linePath(l.pts, x, y, gap), fill: "none", stroke: col, "stroke-width": 2.2, "stroke-linejoin": "round", "stroke-linecap": "round" }, hiG);
+      if (l.pts.length < 120) for (const p of l.pts) el("circle", { cx: x(p.t), cy: y(p.v), r: 2.5, fill: col }, hiG);
+    }
+    setHi(opt.hi);
+
+    const cross = el("line", { y1: M.t, y2: H - M.b, stroke: faint, "stroke-width": 1, "stroke-dasharray": "3 3", visibility: "hidden" }, svg);
+    const dot = el("circle", { r: 4.5, fill: css("--s1"), stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg);
+    const tip = tipFor(box);
+    const near = (pts, tt, tol) => { const q = nearest(pts, tt); return q && Math.abs(q.t - tt) <= tol ? q : null; };
+    const hiLine = byCode.get(opt.hi);
+    const tAt = (px) => t0 + (px - M.l) / (W - M.l - M.r) * (t1 - t0);
+    const local = (ev) => { const r = svg.getBoundingClientRect(); return [(ev.clientX - r.left) * (W / r.width), (ev.clientY - r.top) * (H / r.height)]; };
+    // where a station's drawn line is at time tt, in chart pixels (null where the line has a gap)
+    function lineY(l, tt){
+      const p = l.pts;
+      let lo = 0, hi = p.length - 1;
+      if (hi < 0 || tt < p[0].t || tt > p[hi].t) return null;
+      while (hi - lo > 1) { const m = (lo + hi) >> 1; if (p[m].t <= tt) lo = m; else hi = m; }
+      const a = p[lo], b = p[hi];
+      if (b.t - a.t > gap) return null;
+      const v = b.t === a.t ? a.v : a.v + (b.v - a.v) * (tt - a.t) / (b.t - a.t);
+      return Math.max(M.t, y(v));
+    }
+    // the station whose line passes under the pointer, within tol pixels
+    function lineAt(px, py, tol){
+      const tt = tAt(px);
+      let best = null, bd = tol;
+      for (const l of lines) { const ly = lineY(l, tt); if (ly != null && Math.abs(ly - py) < bd) { bd = Math.abs(ly - py); best = l; } }
+      return best;
+    }
+    // reading values: the crosshair follows the pointer and shows the selected station,
+    // the province and the country; it never changes which station is selected
+    function show(tt){
+      const q = hiLine ? near(hiLine.pts, tt, 10 * DAY) : null;
+      const a = near(opt.avg, tt, 4 * DAY), n = near(opt.nat, tt, 4 * DAY);
+      const at = q ? q.t : a ? a.t : n ? n.t : tt;
+      const cx = x(at);
+      cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+      if (q) { dot.setAttribute("cx", cx); dot.setAttribute("cy", y(Math.min(q.v, yMax))); dot.setAttribute("visibility", "visible"); }
+      else dot.setAttribute("visibility", "hidden");
+      const rows = [];
+      if (hiLine) rows.push({ color: css("--s1"), value: q ? sewageFmt(q.v) : "–", name: hiLine.name });
+      rows.push({ color: css("--s2"), value: a ? sewageFmt(a.v) : "–", name: t("province_avg") });
+      rows.push({ color: faint, value: n ? sewageFmt(n.v) : "–", name: t("national_avg") });
+      tipRows(tip, fmtDate(at), rows);
+      const ref = q || a || n;
+      placeTip(box, tip, cx, ref ? y(Math.min(ref.v, yMax)) : H / 2);
+    }
+    function hide(){ cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); tip.style.display = "none"; }
+    svg.addEventListener("pointermove", (ev) => {
+      const [px, py] = local(ev);
+      if (px < M.l || px > W - M.r) return hide();
+      show(tAt(px));
+      if (ev.pointerType === "mouse") svg.style.cursor = lineAt(px, py, 8) ? "pointer" : "";
+    });
+    svg.addEventListener("pointerleave", hide);
+    svg.addEventListener("blur", hide);
+    // a tap or click on a line selects that station; on the selected line again, clears it
+    svg.addEventListener("click", (ev) => {
+      const [px, py] = local(ev);
+      const l = lineAt(px, py, ev.pointerType === "mouse" ? 8 : 16);
+      if (l) opt.onPick(l.code === opt.hi ? null : l.code);
+    });
+    // keyboard: up/down select the next station, left/right step through the measurements, Escape clears
+    const withPts = lines.filter(l => l.pts.length);
+    let kIdx = -1;
+    svg.addEventListener("keydown", (ev) => {
+      if (ev.key === "ArrowUp" || ev.key === "ArrowDown") {
+        if (!withPts.length) return;
+        ev.preventDefault();
+        let i = withPts.findIndex(l => l.code === opt.hi);
+        i = i < 0 ? 0 : (i + (ev.key === "ArrowDown" ? 1 : -1) + withPts.length) % withPts.length;
+        opt.onPick(withPts[i].code, true);
+      } else if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+        const pts = hiLine ? hiLine.pts : opt.avg;
+        if (!pts.length) return;
+        ev.preventDefault();
+        kIdx = kIdx < 0 ? pts.length - 1 : Math.max(0, Math.min(pts.length - 1, kIdx + (ev.key === "ArrowRight" ? 1 : -1)));
+        show(pts[kIdx].t);
+      } else if (ev.key === "Escape" && opt.hi) opt.onPick(null, true);
+    });
+    box.appendChild(svg);
+    return { clipped, yMax };
   }
 
   function renderTable(node, head, rows){
@@ -951,9 +1146,68 @@
     renderTable(card.querySelector("[data-table]"), [t("month"), "n", ...keys.map(k => k.name)],
       cats.slice().reverse().map(ct => [fmtMonth(ct.t), String(ct.n), ...keys.map(k => Math.round((ct.shares[k.id] || 0) * 100) + "%")]));
   }
+  function syncPlantControls(){
+    if (!state.plants) return;
+    const prov = state.plantView === "province" && mapState.built && state.pv != null;
+    document.getElementById("plantview").hidden = !mapState.built;
+    for (const b of document.querySelectorAll("#plantview button")) b.setAttribute("aria-pressed", String(b.dataset.view === (prov ? "province" : "station")));
+    document.getElementById("provsel").hidden = !prov;
+    document.getElementById("provst").hidden = !prov;
+    document.getElementById("plantsel").hidden = prov;
+    return prov;
+  }
+  // the stations counted in province pv (the province each station mainly serves, as on the map)
+  const stationsIn = (pv) => [...mapState.provinceOf].filter(([code, i]) => i === pv && state.plants.has(code)).map(([code]) => code);
+  function drawProvince(){
+    const card = document.getElementById("c-plant"), c = cutoff(), pv = state.pv, P = GEO.provinces[pv];
+    const lines = stationsIn(pv).map(code => { const p = state.plants.get(code); return { code, name: p.name, pts: p.pts.filter(q => q.t >= c) }; })
+      .filter(l => l.pts.length).sort((a, b) => a.name.localeCompare(b.name, "nl"));
+    // weekly level as on the map, plotted mid-week
+    const avg = mapState.weeks.map((w, wi) => ({ t: w + 3 * DAY, v: mapState.level[pv][wi] })).filter(q => q.v != null && q.t >= c);
+    const nat = (state.data.sewage || []).filter(q => q.t >= c);
+    if (state.hi && !lines.some(l => l.code === state.hi)) state.hi = null;
+    const hiLine = lines.find(l => l.code === state.hi);
+    const legend = [
+      { name: t("province_avg") + " " + P.name, color: css("--s2") },
+      { name: t("national_avg"), color: css("--tick"), dash: true },
+      { name: tf("st_lines", { n: lines.length }), color: css("--tick"), faint: true },
+    ];
+    if (hiLine) legend.push({ name: hiLine.name, color: css("--s1") });
+    renderLegend(card.querySelector("[data-legend]"), legend);
+    const res = multiChart(card.querySelector("[data-chart]"), lines, {
+      avg, nat, hi: state.hi, t0: c, label: tf("aria_prov", { name: P.name }),
+      onPick: (code, refocus) => {
+        pickInProvince(code);
+        if (refocus) card.querySelector("[data-chart] svg")?.focus();
+      },
+    });
+    // the station list holds the province's stations with data in view
+    const pick = document.getElementById("provst");
+    pick.replaceChildren(Object.assign(document.createElement("option"), { value: "", textContent: t("pick_station") }),
+      ...lines.map(l => Object.assign(document.createElement("option"), { value: l.code, textContent: l.name })));
+    pick.value = state.hi || "";
+    const note = card.querySelector("[data-clipnote]");
+    note.hidden = !res.clipped;
+    if (res.clipped) note.textContent = tf("clipped", { v: sewageFmt(res.yMax) });
+    // latest measurement in view and the station's current 4-week trend, fastest-growing first
+    const wi = mapState.weeks.length - 1;
+    const rows = lines.map(l => { const q = l.pts[l.pts.length - 1]; return { name: l.name, q, g: stationGrowth(l.code, wi) }; })
+      .sort((a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity));
+    renderTable(card.querySelector("[data-table]"), [t("col_station"), t("col_growth"), t("col_level"), t("col_last")],
+      rows.map(r => [r.name, r.g == null ? "–" : pctFmtSigned(r.g), sewageFmt(r.q.v), fmtDate(r.q.t)]));
+  }
+  // select a station in the province chart (null clears), and keep the map and list in step
+  function pickInProvince(code){
+    state.hi = code || null;
+    if (state.hi) rememberStation(state.hi);
+    drawPlant(); drawMap();
+  }
   function drawPlant(){
     const card = document.getElementById("c-plant");
-    if (!state.plants || !state.plantCode) return;
+    if (!state.plants) return;
+    if (syncPlantControls()) return drawProvince();
+    if (!state.plantCode) return;
+    card.querySelector("[data-clipnote]").hidden = true;
     const p = state.plants.get(state.plantCode), c = cutoff();
     const pts = p.pts.filter(q => q.t >= c);
     const nat = (state.data.sewage || []).filter(q => q.t >= c);
@@ -1004,7 +1258,7 @@
       caption: () => t("cap_level"),
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
-  const mapState = { mode: "level", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
+  const mapState = { mode: "level", layer: "provinces", pin: null, week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
     lastWeek: new Map(), stationVal: new Map(), stationsTotal: [], updated: [], legendKey: "" };
   // station dots: shade by weeks since the station's latest measurement (blue, apart from the fills)
   const AGES = [
@@ -1176,9 +1430,9 @@
     const box = card.querySelector("[data-map]");
     box.querySelector(".empty")?.remove();
     let svg = box.querySelector("svg");
-    const R = GEO.w / 150;
     if (!svg) {
-      svg = el("svg", { viewBox: `-4 -4 ${GEO.w + 8} ${GEO.h + 8}`, role: "group", "aria-label": t("map_aria") }, null);
+      const b = baseView();
+      svg = el("svg", { viewBox: `${b.x} ${b.y} ${b.w} ${b.h}`, role: "group", "aria-label": t("map_aria") }, null);
       el("g", { class: "catch" }, svg);
       GEO.provinces.forEach((p, i) => {
         const path = el("path", { d: p.d, class: "pv", tabindex: 0, "data-i": i }, svg);
@@ -1187,21 +1441,25 @@
         path.addEventListener("focus", () => mapTip(i));
         path.addEventListener("pointerleave", hideMapTip);
         path.addEventListener("blur", hideMapTip);
+        path.addEventListener("click", () => { mapState.pin = null; selectProvince(i); });
+        path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectProvince(i); } });
       });
       const dots = el("g", { class: "stations" }, svg);
       for (const code of mapState.lastWeek.keys()) {
         const xy = GEO.stations[code];
         if (!xy) continue;
-        const c = el("circle", { class: "st", cx: xy[0], cy: xy[1], r: R, "data-code": code }, dots);
+        const c = el("circle", { class: "st", cx: xy[0], cy: xy[1], "data-code": code }, dots);
         c.addEventListener("pointerenter", () => stationTip(code));
         c.addEventListener("pointerleave", hideMapTip);
-        c.addEventListener("click", () => selectStation(code));
+        c.addEventListener("click", () => toggleStationTip(code));
       }
       GEO.provinces.forEach((p) => {
         const t = el("text", { x: p.lx, y: p.ly, "text-anchor": "middle", "dominant-baseline": "middle", "font-size": Math.round(GEO.w / 48), "stroke-width": Math.round(GEO.w / 360) }, svg);
         t.textContent = p.name;
       });
       box.appendChild(svg);
+      wireZoom(svg);
+      document.querySelector("#c-map [data-zoomctl]").hidden = false;
     }
     // catchment areas arrive in a separate file; add them once they are there
     const cg = svg.querySelector("g.catch");
@@ -1210,7 +1468,7 @@
         const path = el("path", { d, class: "ca", "data-code": code }, cg);
         path.addEventListener("pointerenter", () => stationTip(code));
         path.addEventListener("pointerleave", hideMapTip);
-        path.addEventListener("click", () => selectStation(code));
+        path.addEventListener("click", () => toggleStationTip(code));
       }
     }
     svg.classList.toggle("catch-mode", catchMode);
@@ -1219,8 +1477,10 @@
     const wi = mapState.week;
     const pvValue = (i) => (mapState.mode === "growth" ? mapState.growth[i][wi] : mapState.level[i][wi]);
     const stValue = (code) => (mapState.mode === "growth" ? stationGrowth(code, wi) : stationLevel(code, wi));
+    const pvOn = state.plantView === "province" ? state.pv : null;
     for (const path of svg.querySelectorAll("path.pv")) {
       const i = +path.dataset.i, v = pvValue(i), u = mapState.updated[i][wi];
+      path.classList.toggle("on", i === pvOn);
       path.setAttribute("fill", v == null ? css("--nodata") : mode.color(v));
       path.setAttribute("aria-label", tf("aria_pv", { name: GEO.provinces[i].name, value: v == null ? t("nodata_lc") : mode.fmt(v), n: u[0], N: mapState.stationsTotal[i] }));
     }
@@ -1234,20 +1494,17 @@
       c.setAttribute("visibility", "visible");
       const age = wi - lw;
       c.dataset.age = String(Math.min(age, AGES.length));
-      if (age < AGES.length) {
-        c.setAttribute("r", R); c.setAttribute("fill", AGES[age].color);
-        c.setAttribute("stroke", "#ffffff"); c.setAttribute("stroke-width", R * 0.4);
-      } else {
-        c.setAttribute("r", R * 0.7); c.setAttribute("fill", "none");
-        c.setAttribute("stroke", "#8b8a84"); c.setAttribute("stroke-width", R * 0.35);
-      }
+      if (age < AGES.length) { c.setAttribute("fill", AGES[age].color); c.setAttribute("stroke", "#ffffff"); }
+      else { c.setAttribute("fill", "none"); c.setAttribute("stroke", "#8b8a84"); }
     }
     // recently updated stations on top where dots overlap; the selected station above all
     const g = svg.querySelector("g.stations");
     for (const c of [...g.children].sort((a, b) => (+b.dataset.age || 0) - (+a.dataset.age || 0))) g.appendChild(c);
-    for (const c of g.children) c.classList.toggle("sel", c.dataset.code === state.plantCode);
+    const selCode = state.plantView === "province" ? state.hi : state.plantCode;
+    for (const c of g.children) c.classList.toggle("sel", c.dataset.code === selCode);
     const selDot = g.querySelector("circle.sel");
-    if (selDot) { g.appendChild(selDot); selDot.setAttribute("r", R * 1.25); }
+    if (selDot) g.appendChild(selDot);
+    applyView();
 
     document.getElementById("mapweeklabel").textContent = fmtWeek(mapState.weeks[wi]);
     document.getElementById("mapweek").value = String(wi);
@@ -1289,8 +1546,8 @@
       { color: lv == null ? css("--nodata") : MODES.level.color(lv), value: lv == null ? t("nodata_lc") : MODES.level.fmt(lv), name: "" },
       ...u.map((n, k) => ({ color: AGES[k].color, value: n + " / " + N, name: k ? tf("tip_st_k", { k: k + 1 }) : t("tip_st_this") })),
     ]);
-    const svg = box.querySelector("svg"), p = GEO.provinces[i], s = svg.clientWidth / (GEO.w + 8);
-    placeTip(box, tip, (p.lx + 4) * s, (p.ly + 4) * s);
+    const p = GEO.provinces[i];
+    placeTip(box, tip, ...mapPoint(box, p.lx, p.ly));
   }
   function stationTip(code){
     const box = document.querySelector("#c-map [data-map]"), tip = tipFor(box), wi = mapState.week;
@@ -1304,20 +1561,186 @@
       { color: q ? MODES.level.color(q.v) : css("--nodata"), value: q ? MODES.level.fmt(q.v) : "–", name: "" },
       { color: age < AGES.length ? AGES[age].color : "#8b8a84", value: q ? fmtDate(q.t) : "–", name: t("last_measured") },
     ]);
-    const xy = GEO.stations[code] || [0, 0], s = box.querySelector("svg").clientWidth / (GEO.w + 8);
-    placeTip(box, tip, (xy[0] + 4) * s, (xy[1] + 4) * s);
+    const xy = GEO.stations[code] || [0, 0];
+    placeTip(box, tip, ...mapPoint(box, xy[0], xy[1]));
   }
-  function hideMapTip(){ const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none"; }
+  // a tapped station keeps its tooltip open (mapState.pin) until it is tapped again; hovering
+  // elsewhere shows other tooltips for a moment and then falls back to the pinned one
+  function hideMapTip(){
+    if (mapState.pin && mapSvg()) return stationTip(mapState.pin);
+    const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none";
+  }
+  function unpinMapTip(){ if (!mapState.pin) return; mapState.pin = null; hideMapTip(); }
+  // tapping a station opens its tooltip and selects it in the chart below; tapping it again closes the tooltip
+  function toggleStationTip(code){
+    if (mapState.pin === code) return unpinMapTip();
+    mapState.pin = code;
+    selectStation(code);
+  }
+  document.addEventListener("click", (e) => { if (mapState.pin && !e.target.closest("#c-map [data-map]")) unpinMapTip(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") unpinMapTip(); });
+  // a point on the map in pixels from the map box's top left, at the current zoom
+  function mapPoint(box, x, y){
+    const m = box.querySelector("svg").getScreenCTM(), b = box.getBoundingClientRect();
+    return [m.a * x + m.c * y + m.e - b.left, m.b * x + m.d * y + m.f - b.top];
+  }
 
-  // clicking a station or catchment area shows that station in the chart below the map
-  function selectStation(code){
-    if (!state.plants || !state.plants.has(code)) return;
+  // ---------- map zoom ----------
+  // the view is a zoom factor and a centre in map units; the viewBox keeps the map's aspect ratio
+  const MAX_ZOOM = 8;
+  const zoom = { k: 1, cx: null, cy: null };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const baseView = () => ({ x: -4, y: -4, w: GEO.w + 8, h: GEO.h + 8 });
+  function currentView(){
+    const b = baseView(), w = b.w / zoom.k, h = b.h / zoom.k;
+    zoom.cx = clamp(zoom.cx ?? b.x + b.w / 2, b.x + w / 2, b.x + b.w - w / 2);
+    zoom.cy = clamp(zoom.cy ?? b.y + b.h / 2, b.y + h / 2, b.y + b.h - h / 2);
+    return { x: zoom.cx - w / 2, y: zoom.cy - h / 2, w, h };
+  }
+  const mapSvg = () => document.querySelector("#c-map [data-map] svg");
+  // dots, rings and labels shrink as you zoom in (though less than the map grows), so crowded areas separate
+  function sizeMarks(svg){
+    const s = 1 / Math.pow(zoom.k, 0.6), R = GEO.w / 150 * s;
+    for (const c of svg.querySelectorAll("circle.st")) {
+      const fresh = +c.dataset.age < AGES.length, sel = c.classList.contains("sel");
+      c.setAttribute("r", (fresh ? R : R * 0.7) * (sel ? 1.25 : 1));
+      c.setAttribute("stroke-width", sel ? R * 0.57 : fresh ? R * 0.4 : R * 0.35);
+    }
+    const ts = 1 / Math.pow(zoom.k, 0.8);
+    for (const tx of svg.querySelectorAll("text")) {
+      tx.setAttribute("font-size", (GEO.w / 48 * ts).toFixed(1));
+      tx.setAttribute("stroke-width", (GEO.w / 360 * ts).toFixed(1));
+    }
+  }
+  function applyView(){
+    const svg = mapSvg();
+    if (!svg) return;
+    const v = currentView();
+    svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+    svg.classList.toggle("zoomed", zoom.k > 1.001);
+    sizeMarks(svg);
+    const ctl = document.querySelector("#c-map [data-zoomctl]");
+    ctl.querySelector('[data-zoom="in"]').disabled = zoom.k >= MAX_ZOOM - 1e-6;
+    ctl.querySelector('[data-zoom="out"]').disabled = zoom.k <= 1.001;
+    ctl.querySelector('[data-zoom="reset"]').disabled = zoom.k <= 1.001;
+    // keep a pinned tooltip on its station as the map moves
+    if (mapState.pin) stationTip(mapState.pin);
+  }
+  // pixels per map unit at zoom 1
+  const basePx = (svg) => svg.getScreenCTM().a / zoom.k;
+  // zoom by factor f, keeping the map point under the screen point (sx, sy) in place (default: the centre)
+  function zoomBy(f, sx, sy){
+    const svg = mapSvg();
+    if (!svg) return;
+    currentView();
+    const k2 = clamp(zoom.k * f, 1, MAX_ZOOM);
+    if (k2 === zoom.k) return;
+    if (sx != null) {
+      const inv = svg.getScreenCTM().inverse();
+      const mx = inv.a * sx + inv.c * sy + inv.e, my = inv.b * sx + inv.d * sy + inv.f;
+      zoom.cx = mx + (zoom.cx - mx) * zoom.k / k2;
+      zoom.cy = my + (zoom.cy - my) * zoom.k / k2;
+    }
+    zoom.k = k2;
+    hideMapTip(); applyView();
+  }
+  function resetZoom(){ zoom.k = 1; zoom.cx = zoom.cy = null; hideMapTip(); applyView(); }
+  let hintTimer = null;
+  function flashZoomHint(){
+    const h = document.querySelector("#c-map [data-zoomhint]");
+    h.textContent = tf("zoom_hint", { key: /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl" });
+    h.classList.add("on");
+    clearTimeout(hintTimer); hintTimer = setTimeout(() => h.classList.remove("on"), 1200);
+  }
+  function wireZoom(svg){
+    // Ctrl/⌘ + wheel and trackpad pinches zoom; a plain wheel keeps scrolling the page
+    svg.addEventListener("wheel", (e) => {
+      if (!(e.ctrlKey || e.metaKey)) { flashZoomHint(); return; }
+      e.preventDefault();
+      zoomBy(Math.exp(-e.deltaY * (e.deltaMode === 1 ? 0.05 : 0.0025)), e.clientX, e.clientY);
+    }, { passive: false });
+    // drag to pan once zoomed in, two pointers to pinch; a drag does not count as a click
+    const ptrs = new Map();
+    let drag = null, pinch = null, moved = false;
+    const startDrag = (p) => { drag = { x: p.x, y: p.y, cx: zoom.cx, cy: zoom.cy }; };
+    svg.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 1) moved = false;
+      if (ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, k: zoom.k };
+        drag = null;
+      } else if (ptrs.size === 1 && zoom.k > 1.001) { currentView(); startDrag(ptrs.get(e.pointerId)); }
+    });
+    svg.addEventListener("pointermove", (e) => {
+      const p = ptrs.get(e.pointerId);
+      if (!p) return;
+      const dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX; p.y = e.clientY;
+      if (pinch && ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        moved = true;
+        zoomBy(pinch.k * d / pinch.d / zoom.k, (a.x + b.x) / 2, (a.y + b.y) / 2);
+        // and follow the fingers' midpoint
+        const px = basePx(svg) * zoom.k;
+        zoom.cx -= dx / 2 / px; zoom.cy -= dy / 2 / px; applyView();
+      } else if (drag) {
+        if (!moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 4) return;
+        if (!moved) { moved = true; svg.classList.add("dragging"); try { svg.setPointerCapture(e.pointerId); } catch (err) {} hideMapTip(); }
+        const px = basePx(svg) * zoom.k;
+        zoom.cx = drag.cx - (e.clientX - drag.x) / px;
+        zoom.cy = drag.cy - (e.clientY - drag.y) / px;
+        applyView();
+      }
+    });
+    const end = (e) => {
+      if (!ptrs.delete(e.pointerId)) return;
+      if (ptrs.size < 2) pinch = null;
+      if (ptrs.size === 1 && zoom.k > 1.001) { currentView(); startDrag([...ptrs.values()][0]); }
+      if (ptrs.size === 0) { drag = null; svg.classList.remove("dragging"); }
+    };
+    svg.addEventListener("pointerup", end);
+    svg.addEventListener("pointercancel", end);
+    svg.addEventListener("click", (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+  }
+  document.querySelector("#c-map [data-zoomctl]").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-zoom]");
+    if (!b) return;
+    if (b.dataset.zoom === "reset") resetZoom(); else zoomBy(b.dataset.zoom === "in" ? 1.6 : 1 / 1.6);
+  });
+  // + and − zoom while the focus is on the map
+  document.querySelector("#c-map [data-map]").addEventListener("keydown", (e) => {
+    if (e.key === "+" || e.key === "=") { e.preventDefault(); zoomBy(1.6); }
+    else if (e.key === "-" || e.key === "_") { e.preventDefault(); zoomBy(1 / 1.6); }
+    else if (e.key === "0") { e.preventDefault(); resetZoom(); }
+  });
+
+  function rememberStation(code){
     state.plantCode = code;
     document.getElementById("plantsel").value = code;
     try { localStorage.setItem("covidnl.plant", code); } catch (e) {}
+  }
+  function setProvince(i){
+    state.pv = i;
+    document.getElementById("provsel").value = String(i);
+    try { localStorage.setItem("covidnl.province", GEO.provinces[i].code); } catch (e) {}
+  }
+  // a station tapped on the map is picked out in the chart below it:
+  // in its province's chart, or on its own in the one-station view
+  function selectStation(code){
+    if (!state.plants || !state.plants.has(code)) return;
+    rememberStation(code);
+    if (state.plantView === "province" && mapState.provinceOf?.has(code)) { setProvince(mapState.provinceOf.get(code)); state.hi = code; }
     drawPlant(); drawMap();
-    const card = document.getElementById("c-plant"), r = card.getBoundingClientRect();
-    if (r.top > innerHeight - 120 || r.bottom < 0) card.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
+  }
+  // clicking a province shows all of its stations
+  function selectProvince(i){
+    if (!state.plants || !mapState.built) return;
+    state.plantView = "province"; state.hi = null; setProvince(i);
+    try { localStorage.setItem("covidnl.plantview", "province"); } catch (e) {}
+    drawPlant(); drawMap();
   }
 
   function setWeek(wi){ mapState.week = Math.max(minWeek(), Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
@@ -1407,9 +1830,16 @@
       sel.value = pick; state.plantCode = pick;
       state.loadState = "done";
       for (const b of btns) b.hidden = true;
-      sel.hidden = false;
-      drawPlant();
-      buildMap(); drawMap();
+      buildMap();
+      if (mapState.built) {
+        fillProvSelect();
+        let code = null;
+        try { code = localStorage.getItem("covidnl.province"); } catch (e) {}
+        let pv = GEO.provinces.findIndex(p => p.code === code);
+        if (pv < 0) pv = mapState.provinceOf.get(pick) ?? GEO.provinces.findIndex(p => p.name === "Utrecht");
+        setProvince(Math.max(0, pv));
+      } else state.plantView = "station";
+      drawPlant(); drawMap();
       loadCatchments().then(drawMap, () => {});
     } catch (e) {
       plantsPromise = null;
@@ -1421,6 +1851,28 @@
   document.getElementById("plantsel").addEventListener("change", (e) => {
     state.plantCode = e.target.value;
     try { localStorage.setItem("covidnl.plant", state.plantCode); } catch (err) {}
+    drawPlant(); drawMap();
+  });
+  function fillProvSelect(){
+    const sel = document.getElementById("provsel");
+    sel.replaceChildren(...GEO.provinces.map((p, i) => [p, i]).sort((a, b) => a[0].name.localeCompare(b[0].name, "nl"))
+      .map(([p, i]) => Object.assign(document.createElement("option"), { value: String(i), textContent: p.name })));
+    if (state.pv != null) sel.value = String(state.pv);
+  }
+  document.getElementById("provst").addEventListener("change", (e) => pickInProvince(e.target.value));
+  document.getElementById("provsel").addEventListener("change", (e) => {
+    setProvince(+e.target.value); state.hi = null;
+    drawPlant(); drawMap();
+  });
+  document.getElementById("plantview").addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-view]"); if (!b) return;
+    state.plantView = b.dataset.view;
+    try { localStorage.setItem("covidnl.plantview", state.plantView); } catch (err) {}
+    // a station picked out in the province chart carries over to the one-station view, and back
+    if (state.plantView === "station" && state.hi) rememberStation(state.hi);
+    if (state.plantView === "province" && state.plantCode && mapState.provinceOf?.has(state.plantCode)) {
+      setProvince(mapState.provinceOf.get(state.plantCode)); state.hi = state.plantCode;
+    }
     drawPlant(); drawMap();
   });
 
