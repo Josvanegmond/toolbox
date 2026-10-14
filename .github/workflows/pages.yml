@@ -1,0 +1,114 @@
+# Builds the GitHub Pages site: main at the root, plus optionally one other branch under /dev/.
+#
+# Dev page: Actions → "Deploy Pages" → Run workflow, keep "Use workflow from" on main,
+# and type the branch to publish. It appears at <site>/dev/ (e.g. <site>/dev/tools/covid-nl.html).
+# Run it with the branch field empty to remove the dev page.
+#
+# A push to main redeploys the root and keeps whatever branch is on the dev page,
+# as long as that branch still exists.
+#
+# Requires Settings → Pages → Source: "GitHub Actions".
+
+name: Deploy Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to publish under /dev/ (leave empty to remove the dev page)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# one deploy at a time; a queued run waits instead of cancelling the one in progress
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _site
+
+      - name: Choose the dev branch
+        id: dev
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.branch }}
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            branch="$INPUT"
+          else
+            # a push to main keeps the branch that is on the dev page now
+            branch="$(curl -fsSL "$BASE_URL/dev/branch.txt?t=$(date +%s)" 2>/dev/null || true)"
+          fi
+          branch="$(printf '%s' "$branch" | tr -d '[:space:]')"
+          if [ -n "$branch" ]; then
+            if ! git check-ref-format --branch "$branch" >/dev/null 2>&1 \
+               || ! git -C _site ls-remote --exit-code --heads origin "refs/heads/$branch" >/dev/null; then
+              if [ "$EVENT" = "workflow_dispatch" ]; then
+                echo "::error::There is no branch named '$branch'."
+                exit 1
+              fi
+              echo "::warning::Branch '$branch' no longer exists, so the dev page is removed."
+              branch=""
+            fi
+          fi
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          if [ -n "$branch" ]; then
+            echo "Dev page: $branch → $BASE_URL/dev/" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No dev page." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Check out the dev branch
+        if: steps.dev.outputs.branch != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.dev.outputs.branch }}
+          path: _site/dev
+
+      - name: Assemble the site
+        env:
+          BRANCH: ${{ steps.dev.outputs.branch }}
+        run: |
+          rm -rf _site/.git _site/.github
+          if [ -n "$BRANCH" ]; then
+            rm -rf _site/dev/.git _site/dev/.github
+            # remembered for the next push to main
+            printf '%s\n' "$BRANCH" > _site/dev/branch.txt
+            # keep the dev copy out of search results
+            find _site/dev -name '*.html' -exec sed -i 's#<head>#<head>\n<meta name="robots" content="noindex">#' {} +
+          fi
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
