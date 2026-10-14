@@ -1258,7 +1258,7 @@
       caption: () => t("cap_level"),
       fmt: (v) => sewageFmt(v) + " × 10¹¹" },
   };
-  const mapState = { mode: "level", layer: "provinces", week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
+  const mapState = { mode: "level", layer: "provinces", pin: null, week: -1, weeks: [], level: [], growth: [], built: false, timer: null,
     lastWeek: new Map(), stationVal: new Map(), stationsTotal: [], updated: [], legendKey: "" };
   // station dots: shade by weeks since the station's latest measurement (blue, apart from the fills)
   const AGES = [
@@ -1441,7 +1441,7 @@
         path.addEventListener("focus", () => mapTip(i));
         path.addEventListener("pointerleave", hideMapTip);
         path.addEventListener("blur", hideMapTip);
-        path.addEventListener("click", () => selectProvince(i));
+        path.addEventListener("click", () => { mapState.pin = null; selectProvince(i); });
         path.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); selectProvince(i); } });
       });
       const dots = el("g", { class: "stations" }, svg);
@@ -1451,7 +1451,7 @@
         const c = el("circle", { class: "st", cx: xy[0], cy: xy[1], "data-code": code }, dots);
         c.addEventListener("pointerenter", () => stationTip(code));
         c.addEventListener("pointerleave", hideMapTip);
-        c.addEventListener("click", () => selectStation(code));
+        c.addEventListener("click", () => toggleStationTip(code));
       }
       GEO.provinces.forEach((p) => {
         const t = el("text", { x: p.lx, y: p.ly, "text-anchor": "middle", "dominant-baseline": "middle", "font-size": Math.round(GEO.w / 48), "stroke-width": Math.round(GEO.w / 360) }, svg);
@@ -1468,7 +1468,7 @@
         const path = el("path", { d, class: "ca", "data-code": code }, cg);
         path.addEventListener("pointerenter", () => stationTip(code));
         path.addEventListener("pointerleave", hideMapTip);
-        path.addEventListener("click", () => selectStation(code));
+        path.addEventListener("click", () => toggleStationTip(code));
       }
     }
     svg.classList.toggle("catch-mode", catchMode);
@@ -1564,7 +1564,21 @@
     const xy = GEO.stations[code] || [0, 0];
     placeTip(box, tip, ...mapPoint(box, xy[0], xy[1]));
   }
-  function hideMapTip(){ const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none"; }
+  // a tapped station keeps its tooltip open (mapState.pin) until it is tapped again; hovering
+  // elsewhere shows other tooltips for a moment and then falls back to the pinned one
+  function hideMapTip(){
+    if (mapState.pin && mapSvg()) return stationTip(mapState.pin);
+    const t = document.querySelector("#c-map .tip"); if (t) t.style.display = "none";
+  }
+  function unpinMapTip(){ if (!mapState.pin) return; mapState.pin = null; hideMapTip(); }
+  // tapping a station opens its tooltip and selects it in the chart below; tapping it again closes the tooltip
+  function toggleStationTip(code){
+    if (mapState.pin === code) return unpinMapTip();
+    mapState.pin = code;
+    selectStation(code);
+  }
+  document.addEventListener("click", (e) => { if (mapState.pin && !e.target.closest("#c-map [data-map]")) unpinMapTip(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") unpinMapTip(); });
   // a point on the map in pixels from the map box's top left, at the current zoom
   function mapPoint(box, x, y){
     const m = box.querySelector("svg").getScreenCTM(), b = box.getBoundingClientRect();
@@ -1609,6 +1623,8 @@
     ctl.querySelector('[data-zoom="in"]').disabled = zoom.k >= MAX_ZOOM - 1e-6;
     ctl.querySelector('[data-zoom="out"]').disabled = zoom.k <= 1.001;
     ctl.querySelector('[data-zoom="reset"]').disabled = zoom.k <= 1.001;
+    // keep a pinned tooltip on its station as the map moves
+    if (mapState.pin) stationTip(mapState.pin);
   }
   // pixels per map unit at zoom 1
   const basePx = (svg) => svg.getScreenCTM().a / zoom.k;
@@ -1701,10 +1717,6 @@
     else if (e.key === "0") { e.preventDefault(); resetZoom(); }
   });
 
-  function scrollToPlant(){
-    const card = document.getElementById("c-plant"), r = card.getBoundingClientRect();
-    if (r.top > innerHeight - 120 || r.bottom < 0) card.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "nearest" });
-  }
   function rememberStation(code){
     state.plantCode = code;
     document.getElementById("plantsel").value = code;
@@ -1715,20 +1727,20 @@
     document.getElementById("provsel").value = String(i);
     try { localStorage.setItem("covidnl.province", GEO.provinces[i].code); } catch (e) {}
   }
-  // clicking a station or catchment area picks it out in the chart below the map:
+  // a station tapped on the map is picked out in the chart below it:
   // in its province's chart, or on its own in the one-station view
   function selectStation(code){
     if (!state.plants || !state.plants.has(code)) return;
     rememberStation(code);
     if (state.plantView === "province" && mapState.provinceOf?.has(code)) { setProvince(mapState.provinceOf.get(code)); state.hi = code; }
-    drawPlant(); drawMap(); scrollToPlant();
+    drawPlant(); drawMap();
   }
   // clicking a province shows all of its stations
   function selectProvince(i){
     if (!state.plants || !mapState.built) return;
     state.plantView = "province"; state.hi = null; setProvince(i);
     try { localStorage.setItem("covidnl.plantview", "province"); } catch (e) {}
-    drawPlant(); drawMap(); scrollToPlant();
+    drawPlant(); drawMap();
   }
 
   function setWeek(wi){ mapState.week = Math.max(minWeek(), Math.min(mapState.weeks.length - 1, wi)); hideMapTip(); drawMap(); }
