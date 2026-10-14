@@ -125,17 +125,16 @@
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
   .legend i{ display:inline-block; width:14px; height:2px; border-radius:1px; }
   .legend i.box{ width:10px; height:10px; border-radius:2px; }
-  .legend.others{ gap:6px; align-items:center; margin-bottom:8px; }
-  .legend .lbl{ margin-right:2px; }
+  .legend{ align-items:center; }
   .legend button.chip{
     font:inherit; font-size:12px; color:var(--muted); background:var(--surface);
     border:1px solid var(--line); border-radius:999px; padding:2px 9px 2px 7px;
     display:inline-flex; align-items:center; gap:6px; cursor:pointer;
   }
-  .legend button.chip i{ width:10px; height:10px; border-radius:50%; border:1px solid var(--axis); background:transparent; }
+  .legend button.chip i{ width:14px; height:2px; background:var(--tick); opacity:.35; }
   .legend button.chip:hover{ color:var(--ink); }
   .legend button.chip[aria-pressed="true"]{ color:var(--ink); border-color:var(--axis); }
-  .legend button.chip[aria-pressed="true"] i{ border-color:transparent; }
+  .legend button.chip[aria-pressed="true"] i{ opacity:.8; }
   .legend button.chip:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
   .chart{ position:relative; width:100%; height:240px; }
   .chart.tall{ height:300px; }
@@ -370,7 +369,6 @@
         <select id="plantsel" hidden data-i18n-aria="station"></select>
       </div>
       <div class="legend" data-legend></div>
-      <div class="legend others" data-others hidden></div>
       <div class="chart tall" data-chart><div class="empty"><button type="button" class="linkbtn" id="plantload" data-plantload></button></div></div>
       <p class="note" data-clipnote hidden></p>
       <div class="foot"><details class="tbl"><summary data-i18n="table">Table</summary><div class="tblwrap" data-table></div></details>
@@ -500,9 +498,9 @@
       m_sampling_map: "Sinds jul 2025: ~40% van de stations per week",
       m_latest: "Laatste week", m_latest_d: "Kan onvolledig zijn; RIVM past cijfers achteraf aan",
       m_leftout: "Weggelaten", m_leftout_d: "4 Gelderse stations, gesloten in 2020–21 (alleen als stip)",
-      plant_h: "Virus in rioolwater, per station", plant_sub: "Gekozen station met het provinciegemiddelde en landelijk gemiddelde · zet andere stations aan in de legenda",
+      plant_h: "Virus in rioolwater, per station", plant_sub: "Gekozen station met het provinciegemiddelde en landelijk gemiddelde · tik op Stations in de legenda om de andere stations te tonen",
       station: "Rioolwaterstation",
-      province_avg: "Provinciegemiddelde", other_stations: "Andere stations:",
+      province_avg: "Provinciegemiddelde", st_lines: "Stations ({n})",
       clipped: "Pieken boven {v} × 10¹¹ lopen boven de grafiek uit; beweeg erover voor de waarde.",
       zoom_in: "Inzoomen", zoom_out: "Uitzoomen", zoom_reset: "Zoom herstellen",
       zoom_hint: "Gebruik {key} + scrollen om te zoomen",
@@ -574,9 +572,9 @@
       m_sampling_map: "Since Jul 2025: ~40% of stations per week",
       m_latest: "Latest week", m_latest_d: "Can be incomplete; RIVM revises",
       m_leftout: "Left out", m_leftout_d: "4 Gelderland stations closed 2020–21 (dots only)",
-      plant_h: "Virus in sewage, per station", plant_sub: "Selected station with the province and national averages · switch on other stations in the legend",
+      plant_h: "Virus in sewage, per station", plant_sub: "Selected station with the province and national averages · tap Stations in the legend to show the other stations",
       station: "Sewage station",
-      province_avg: "Province average", other_stations: "Other stations:",
+      province_avg: "Province average", st_lines: "Stations ({n})",
       clipped: "Peaks above {v} × 10¹¹ run off the top of the chart; hover for the value.",
       zoom_in: "Zoom in", zoom_out: "Zoom out", zoom_reset: "Reset zoom",
       zoom_hint: "Use {key} + scroll to zoom",
@@ -672,8 +670,8 @@
   const pctFmt = (v) => f1.format(v) + "%";
 
   // ---------- state ----------
-  // the station chart shows station plantCode in province pv, plus the province's stations in extra
-  const state = { months: 12, data: {}, plants: null, plantCode: null, pub: {}, failed: [], pv: null, extra: new Set() };
+  // the station chart shows station plantCode in province pv; showAll adds the province's other stations
+  const state = { months: 12, data: {}, plants: null, plantCode: null, pub: {}, failed: [], pv: null, showAll: false };
   try { const m = localStorage.getItem("covidnl.months"); if (m !== null) state.months = +m; } catch (e) {}
 
   function cutoff(){
@@ -896,8 +894,8 @@
   }
 
   // The selected station (bold, blue) against the province average (orange) and the national average
-  // (dashed); stations switched on in the legend are added as thinner coloured lines. Tapping one of
-  // those lines selects it; moving the pointer only reads off values.
+  // (dashed); with "Stations" switched on in the legend, the province's other stations are added as
+  // faint grey lines. Tapping one of those selects it; moving the pointer only reads off values.
   // lines: [{code, name, pts, color, main}]; opt: {avg, nat, t0, label, order, onPick}
   function stationChart(box, lines, opt){
     box.querySelector("svg")?.remove();
@@ -924,12 +922,12 @@
     el("rect", { x: M.l, y: M.t - 3, width: W - M.l - M.r + 4, height: H - M.t - M.b + 3 }, el("clipPath", { id: clipId }, el("defs", {}, svg)));
     const plot = el("g", { "clip-path": `url(#${clipId})` }, svg);
     const faint = css("--tick"), gap = 35 * DAY;
-    if (opt.nat.length) el("path", { d: linePath(opt.nat, x, y, 9 * DAY), fill: "none", stroke: faint, "stroke-width": 1.5, "stroke-dasharray": "5 4" }, plot);
-    if (opt.avg.length) el("path", { d: linePath(opt.avg, x, y, 15 * DAY), fill: "none", stroke: css("--s2"), "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot);
     for (const l of lines) {
       if (l.main || !l.pts.length) continue;
-      el("path", { d: linePath(l.pts, x, y, gap), fill: "none", stroke: l.color, "stroke-width": 1.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot);
+      el("path", { d: linePath(l.pts, x, y, gap), fill: "none", stroke: faint, "stroke-opacity": 0.45, "stroke-width": 1, "stroke-linejoin": "round" }, plot);
     }
+    if (opt.nat.length) el("path", { d: linePath(opt.nat, x, y, 9 * DAY), fill: "none", stroke: faint, "stroke-width": 1.5, "stroke-dasharray": "5 4" }, plot);
+    if (opt.avg.length) el("path", { d: linePath(opt.avg, x, y, 15 * DAY), fill: "none", stroke: css("--s2"), "stroke-width": 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot);
     const main = lines.find(l => l.main);
     if (main && main.pts.length) {
       el("path", { d: linePath(main.pts, x, y, gap), fill: "none", stroke: main.color, "stroke-width": 2.4, "stroke-linejoin": "round", "stroke-linecap": "round" }, plot);
@@ -953,7 +951,7 @@
       const v = b.t === a.t ? a.v : a.v + (b.v - a.v) * (tt - a.t) / (b.t - a.t);
       return Math.max(M.t, y(v));
     }
-    // the switched-on station whose line passes under the pointer, within tol pixels
+    // the grey station line that passes under the pointer, within tol pixels
     function lineAt(px, py, tol){
       const tt = tAt(px);
       let best = null, bd = tol;
@@ -970,11 +968,6 @@
       else dot.setAttribute("visibility", "hidden");
       const rows = [];
       if (main) rows.push({ color: main.color, value: q ? sewageFmt(q.v) : "–", name: main.name });
-      for (const l of lines) {
-        if (l.main) continue;
-        const e = near(l.pts, at, 10 * DAY);
-        rows.push({ color: l.color, value: e ? sewageFmt(e.v) : "–", name: l.name });
-      }
       rows.push({ color: css("--s2"), value: a ? sewageFmt(a.v) : "–", name: t("province_avg") });
       rows.push({ color: faint, value: n ? sewageFmt(n.v) : "–", name: t("national_avg") });
       tipRows(tip, fmtDate(at), rows);
@@ -1152,7 +1145,6 @@
     for (const code of stationsIn(pv)) { const e = GEO.plants[code].find(([i]) => i === pv); if (e && e[1] > most) { most = e[1]; best = code; } }
     return best;
   }
-  const EXTRA_SLOTS = ["--s3", "--s4", "--s5", "--s6", "--s7", "--s8"];
   function drawPlant(){
     const card = document.getElementById("c-plant");
     if (!state.plants || !mapState.built || state.pv == null || !state.plantCode) return;
@@ -1161,20 +1153,24 @@
     const c = cutoff(), pv = state.pv, P = GEO.provinces[pv], codes = stationsIn(pv);
     const mk = (code) => { const p = state.plants.get(code); return { code, name: p.name, pts: p.pts.filter(q => q.t >= c) }; };
     const main = { ...mk(state.plantCode), color: css("--s1"), main: true };
-    // a switched-on station keeps its colour by its place in the province's list
-    const others = codes.filter(code => code !== state.plantCode);
-    const colorOf = (code) => css(EXTRA_SLOTS[others.indexOf(code) % EXTRA_SLOTS.length]);
-    const extras = others.filter(code => state.extra.has(code)).map(code => ({ ...mk(code), color: colorOf(code) }));
+    const others = codes.filter(code => code !== state.plantCode).map(mk).filter(l => l.pts.length);
     // weekly province level as on the map, plotted mid-week
     const avg = mapState.weeks.map((w, wi) => ({ t: w + 3 * DAY, v: mapState.level[pv][wi] })).filter(q => q.v != null && q.t >= c);
     const nat = (state.data.sewage || []).filter(q => q.t >= c);
-    renderLegend(card.querySelector("[data-legend]"), [
+    const legend = card.querySelector("[data-legend]");
+    renderLegend(legend, [
       { name: main.name, color: main.color },
       { name: t("province_avg") + " " + P.name, color: css("--s2") },
       { name: t("national_avg"), color: css("--tick"), dash: true },
     ]);
-    renderOthers(card.querySelector("[data-others]"), others, colorOf);
-    const res = stationChart(card.querySelector("[data-chart]"), [main, ...extras], {
+    // the legend's Stations entry shows or hides the province's other stations
+    if (others.length) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.dataset.toggle = "all"; b.setAttribute("aria-pressed", String(state.showAll));
+      b.append(document.createElement("i"), document.createTextNode(tf("st_lines", { n: others.length })));
+      legend.appendChild(b);
+    }
+    const res = stationChart(card.querySelector("[data-chart]"), [main, ...(state.showAll ? others : [])], {
       avg, nat, t0: c, label: tf("aria_plant", { name: main.name }), order: codes,
       onPick: (code, refocus) => {
         chooseStation(code);
@@ -1190,21 +1186,6 @@
       .sort((a, b) => (b.g ?? -Infinity) - (a.g ?? -Infinity));
     renderTable(card.querySelector("[data-table]"), [t("col_station"), t("col_growth"), t("col_level"), t("col_last")],
       rows.map(r => [r.name, r.g == null ? "–" : pctFmtSigned(r.g), sewageFmt(r.q.v), fmtDate(r.q.t)]));
-  }
-  // the province's other stations as switches in the legend, all off at first
-  function renderOthers(node, others, colorOf){
-    node.replaceChildren();
-    node.hidden = !others.length;
-    if (!others.length) return;
-    node.appendChild(Object.assign(document.createElement("span"), { className: "lbl", textContent: t("other_stations") }));
-    for (const code of others) {
-      const on = state.extra.has(code);
-      const b = document.createElement("button");
-      b.type = "button"; b.className = "chip"; b.dataset.code = code; b.setAttribute("aria-pressed", String(on));
-      const i = document.createElement("i"); if (on) i.style.background = colorOf(code);
-      b.append(i, document.createTextNode(state.plants.get(code).name));
-      node.appendChild(b);
-    }
   }
   function drawAll(){ drawSewage(); drawPos(); drawAri(); drawVariants(); drawPlant(); }
 
@@ -1716,7 +1697,6 @@
     try { localStorage.setItem("covidnl.plant", code); } catch (e) {}
   }
   function setProvince(i){
-    if (state.pv !== i) state.extra.clear();
     state.pv = i;
     document.getElementById("provsel").value = String(i);
     try { localStorage.setItem("covidnl.province", GEO.provinces[i].code); } catch (e) {}
@@ -1726,7 +1706,6 @@
   function chooseStation(code){
     if (!state.plants?.has(code) || !mapState.provinceOf?.has(code)) return;
     setProvince(mapState.provinceOf.get(code));
-    state.extra.delete(code);
     setStation(code);
     drawPlant(); drawMap();
   }
@@ -1848,14 +1827,12 @@
     if (state.pv != null) sel.value = String(state.pv);
   }
   document.getElementById("provsel").addEventListener("change", (e) => chooseProvince(+e.target.value));
-  // switching other stations on and off from the legend
-  document.querySelector("#c-plant [data-others]").addEventListener("click", (e) => {
-    const b = e.target.closest("button[data-code]");
-    if (!b) return;
-    const code = b.dataset.code;
-    if (state.extra.has(code)) state.extra.delete(code); else state.extra.add(code);
+  // the legend's Stations entry shows or hides the province's other stations
+  document.querySelector("#c-plant [data-legend]").addEventListener("click", (e) => {
+    if (!e.target.closest("button[data-toggle]")) return;
+    state.showAll = !state.showAll;
     drawPlant();
-    document.querySelector(`#c-plant [data-others] button[data-code="${CSS.escape(code)}"]`)?.focus();
+    document.querySelector("#c-plant [data-legend] button[data-toggle]")?.focus();
   });
 
   // ---------- controls ----------
